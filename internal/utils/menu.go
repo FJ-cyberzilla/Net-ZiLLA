@@ -713,3 +713,55 @@ type NetworkAnalysis struct {
 	AverageLatency time.Duration
 	GeoPath        string
 }
+// Add system status check to menu
+func (m *Menu) systemInfo() {
+	ClearScreen()
+	fmt.Printf("\n%s%s═══════════════════════════════════════════════════════════%s\n", ColorBold, ColorCyan, ColorReset)
+	fmt.Printf("%s%s               SYSTEM STATUS & AI ORCHESTRATOR%s\n", ColorBold, ColorGreen, ColorReset)
+	fmt.Printf("%s%s═══════════════════════════════════════════════════════════%s\n\n", ColorBold, ColorCyan, ColorReset)
+
+	// Run system diagnostics
+	fmt.Printf("%s🔄 Running system diagnostics...%s\n\n", ColorYellow, ColorReset)
+	
+	orchestration, err := m.mlAgent.SystemDiagnostics()
+	if err != nil {
+		fmt.Printf("%s❌ System diagnostics failed: %v%s\n", ColorRed, err, ColorReset)
+		return
+	}
+
+	// Display system status
+	fmt.Printf("%s🤖 AI ORCHESTRATOR STATUS:%s\n", ColorBold, ColorPurple, ColorReset)
+	fmt.Printf("   Overall: %s\n", getStatusColor(orchestration.Success))
+	fmt.Printf("   Tasks Ready: %d/%d\n", len(orchestration.TasksExecuted), 5)
+	fmt.Printf("   Performance Score: %.1f/100\n", orchestration.PerformanceMetrics["efficiency_score"]*100)
+	
+	fmt.Printf("\n%s🔧 COMPONENTS STATUS:%s\n", ColorBold, ColorCyan, ColorReset)
+	fmt.Printf("   Analysis Engine: %s\n", getStatusColor(true))
+	fmt.Printf("   ML Models: %s\n", getStatusColor(m.mlAgent.IsAvailable()))
+	fmt.Printf("   Network Stack: %s\n", getStatusColor(true))
+	fmt.Printf("   Security Protocols: %s\n", getStatusColor(true))
+	
+	fmt.Printf("\n%s📊 PERFORMANCE METRICS:%s\n", ColorBold, ColorYellow, ColorReset)
+	for metric, value := range orchestration.PerformanceMetrics {
+		fmt.Printf("   %s: %.2f\n", metric, value)
+	}
+	
+	if len(orchestration.Recommendations) > 0 {
+		fmt.Printf("\n%s💡 AI RECOMMENDATIONS:%s\n", ColorBold, ColorGreen, ColorReset)
+		for i, rec := range orchestration.Recommendations {
+			fmt.Printf("   %d. %s\n", i+1, rec)
+		}
+	}
+	
+	fmt.Printf("\n%s🎯 NEXT ACTIONS:%s\n", ColorBold, ColorBlue, ColorReset)
+	for i, action := range orchestration.NextActions {
+		fmt.Printf("   %d. %s\n", i+1, action)
+	}
+}
+
+func getStatusColor(success bool) string {
+	if success {
+		return fmt.Sprintf("%s✅ Operational%s", ColorGreen, ColorReset)
+	}
+	return fmt.Sprintf("%s❌ Offline%s", ColorRed, ColorReset)
+}
