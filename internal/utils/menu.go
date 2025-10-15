@@ -6,6 +6,294 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"net-zilla/internal/ai"
+	"net-zilla/internal/analyzer"
+	"net-zilla/internal/models"
+)
+
+type Menu struct {
+	analyzer *analyzer.ThreatAnalyzer
+	logger   *Logger
+	mlAgent  *ai.MLAgent
+	scanner  *bufio.Scanner
+	running  bool
+}
+
+func NewMenu(analyzer *analyzer.ThreatAnalyzer, logger *Logger, mlAgent *ai.MLAgent) *Menu {
+	return &Menu{
+		analyzer: analyzer,
+		logger:   logger,
+		mlAgent:  mlAgent,
+		scanner:  bufio.NewScanner(os.Stdin),
+		running:  true,
+	}
+}
+
+func (m *Menu) Run() error {
+	for m.running {
+		m.displayMainMenu()
+		
+		fmt.Print("\n🔍 Select option: ")
+		m.scanner.Scan()
+		choice := strings.TrimSpace(m.scanner.Text())
+
+		switch choice {
+		case "1":
+			m.analyzeLink()
+		case "2":
+			m.analyzeSMSMessage()
+		case "3":
+			m.batchAnalysis()
+		case "4":
+			m.dnsWhoisLookup()
+		case "5":
+			m.ipAnalysis()
+		case "6":
+			m.securityTips()
+		case "7":
+			m.systemInfo()
+		case "0", "exit", "quit":
+			m.running = false
+			fmt.Println("\n👋 Thank you for using Net-Zilla! Stay safe!")
+		default:
+			fmt.Printf("%s❌ Invalid option. Please try again.%s\n", ColorRed, ColorReset)
+		}
+
+		if m.running {
+			fmt.Printf("\n%sPress Enter to continue...%s", ColorYellow, ColorReset)
+			m.scanner.Scan()
+		}
+	}
+	return nil
+}
+
+func (m *Menu) displayMainMenu() {
+	ClearScreen()
+	
+	// Display banner
+	DisplayBanner()
+	
+	fmt.Printf("\n%s%s═══════════════════════════════════════════════════════════%s\n", ColorBold, ColorCyan, ColorReset)
+	fmt.Printf("%s%s                   MAIN MENU%s\n", ColorBold, ColorGreen, ColorReset)
+	fmt.Printf("%s%s═══════════════════════════════════════════════════════════%s\n\n", ColorBold, ColorCyan, ColorReset)
+
+	menuItems := []struct {
+		number string
+		title  string
+		desc   string
+	}{
+		{"1", "🔍 Analyze Suspicious Link", "Comprehensive URL analysis with AI"},
+		{"2", "📱 Analyze SMS/Text Message", "Check message content for phishing"},
+		{"3", "📊 Batch URL Analysis", "Analyze multiple links from file"},
+		{"4", "🌐 DNS & WHOIS Lookup", "Domain information and ownership"},
+		{"5", "📍 IP Address Analysis", "Geolocation and reputation check"},
+		{"6", "🛡️  Security Protection Guide", "Learn how to stay safe online"},
+		{"7", "💻 System Information", "View tool status and AI availability"},
+		{"0", "🚪 Exit", "Close the application"},
+	}
+
+	for _, item := range menuItems {
+		fmt.Printf("%s[%s]%s %s\n", ColorYellow, item.number, ColorReset, item.title)
+		fmt.Printf("    %s%s%s\n\n", ColorCyan, item.desc, ColorReset)
+	}
+}
+
+func (m *Menu) analyzeLink() {
+	ClearScreen()
+	fmt.Printf("\n%s%s═══════════════════════════════════════════════════════════%s\n", ColorBold, ColorCyan, ColorReset)
+	fmt.Printf("%s%s                LINK ANALYSIS%s\n", ColorBold, ColorGreen, ColorReset)
+	fmt.Printf("%s%s═══════════════════════════════════════════════════════════%s\n\n", ColorBold, ColorCyan, ColorReset)
+
+	fmt.Printf("%s⚠️  Enter the suspicious link to analyze:%s\n", ColorYellow, ColorReset)
+	fmt.Printf("%s(We'll analyze it safely without exposing your data)%s\n\n", ColorCyan, ColorReset)
+	fmt.Print("🔗 URL: ")
+
+	m.scanner.Scan()
+	url := strings.TrimSpace(m.scanner.Text())
+
+	if url == "" {
+		fmt.Printf("%s❌ No URL provided.%s\n", ColorRed, ColorReset)
+		return
+	}
+
+	fmt.Printf("\n%s🔍 Analyzing link safely...%s\n", ColorYellow, ColorReset)
+	fmt.Printf("%sThis may take a few seconds...%s\n\n", ColorCyan, ColorReset)
+
+	// Perform analysis
+	analysis, err := m.analyzer.ComprehensiveAnalysis(nil, url)
+	if err != nil {
+		fmt.Printf("%s❌ Analysis failed: %v%s\n", ColorRed, err, ColorReset)
+		return
+	}
+
+	// Display results
+	m.displayAnalysisResults(analysis)
+
+	// Save report
+	if m.shouldSaveReport() {
+		m.saveAnalysisReport(analysis)
+	}
+}
+
+func (m *Menu) displayAnalysisResults(analysis *models.ThreatAnalysis) {
+	fmt.Printf("\n%s%s═══════════════════════════════════════════════════════════%s\n", ColorBold, ColorCyan, ColorReset)
+	fmt.Printf("%s%s             THREAT ANALYSIS REPORT%s\n", ColorBold, ColorGreen, ColorReset)
+	fmt.Printf("%s%s═══════════════════════════════════════════════════════════%s\n\n", ColorBold, ColorCyan, ColorReset)
+
+	// Threat Level with color coding
+	levelColor := ColorGreen
+	switch analysis.ThreatLevel {
+	case models.ThreatLevelCritical:
+		levelColor = ColorRed
+	case models.ThreatLevelHigh:
+		levelColor = ColorRed
+	case models.ThreatLevelMedium:
+		levelColor = ColorYellow
+	case models.ThreatLevelLow:
+		levelColor = ColorGreen
+	}
+
+	fmt.Printf("%sThreat Level: %s%s%s\n", ColorBold, levelColor, analysis.ThreatLevel, ColorReset)
+	fmt.Printf("%sThreat Score: %s%d/100%s\n\n", ColorBold, ColorYellow, analysis.ThreatScore, ColorReset)
+
+	// URL Information
+	fmt.Printf("%s📋 URL Information:%s\n", ColorCyan, ColorReset)
+	fmt.Printf("   Analyzed URL: %s\n", analysis.URL)
+	fmt.Printf("   Analysis ID: %s\n", analysis.AnalysisID)
+	fmt.Printf("   Analysis Time: %s\n", analysis.AnalyzedAt.Format("2006-01-02 15:04:05"))
+	fmt.Printf("   Duration: %v\n\n", analysis.AnalysisDuration)
+
+	// AI Results if available
+	if analysis.AIResult != nil {
+		fmt.Printf("%s🤖 AI Analysis:%s\n", ColorPurple, ColorReset)
+		fmt.Printf("   Safety: %s\n", formatBool(analysis.AIResult.IsSafe, "✅ Safe", "❌ Unsafe"))
+		fmt.Printf("   Confidence: %.1f%%\n", analysis.AIResult.Confidence*100)
+		fmt.Printf("   URL Type: %s\n", formatBool(analysis.AIResult.IsShortened, "Shortened", "Normal"))
+		fmt.Printf("   Health Score: %.1f/100\n\n", analysis.AIResult.HealthScore*100)
+	}
+
+	// Redirect Chain
+	if len(analysis.RedirectChain) > 0 {
+		fmt.Printf("%s🔄 Redirect Chain (%d hops):%s\n", ColorCyan, len(analysis.RedirectChain), ColorReset)
+		for i, redirect := range analysis.RedirectChain {
+			statusColor := ColorGreen
+			if redirect.StatusCode >= 400 {
+				statusColor = ColorRed
+			} else if redirect.StatusCode >= 300 {
+				statusColor = ColorYellow
+			}
+			
+			fmt.Printf("   %d. %s\n", i+1, redirect.URL)
+			fmt.Printf("      Status: %s%d%s | Location: %s\n", 
+				statusColor, redirect.StatusCode, ColorReset, redirect.Location)
+			fmt.Printf("      Time: %v | Cookies: %d\n", 
+				redirect.Duration, len(redirect.Cookies))
+		}
+		fmt.Println()
+	}
+
+	// Warnings and Threats
+	if len(analysis.Warnings) > 0 {
+		fmt.Printf("%s⚠️  Warnings:%s\n", ColorYellow, ColorReset)
+		for _, warning := range analysis.Warnings {
+			fmt.Printf("   • %s\n", warning)
+		}
+		fmt.Println()
+	}
+
+	if analysis.AIResult != nil && len(analysis.AIResult.Threats) > 0 {
+		fmt.Printf("%s🚨 AI-Detected Threats:%s\n", ColorRed, ColorReset)
+		for _, threat := range analysis.AIResult.Threats {
+			fmt.Printf("   • %s\n", threat)
+		}
+		fmt.Println()
+	}
+
+	// Safety Recommendations
+	if len(analysis.SafetyTips) > 0 {
+		fmt.Printf("%s💡 Safety Recommendations:%s\n", ColorGreen, ColorReset)
+		for i, tip := range analysis.SafetyTips {
+			fmt.Printf("   %d. %s\n", i+1, tip)
+		}
+		fmt.Println()
+	}
+
+	// Final Verdict
+	fmt.Printf("%s%sFINAL VERDICT:%s\n", ColorBold, ColorCyan, ColorReset)
+	if analysis.ThreatScore >= 70 {
+		fmt.Printf("%s⛔ CRITICAL THREAT - DO NOT OPEN THIS LINK%s\n", ColorRed, ColorReset)
+		fmt.Printf("%sDelete the message immediately and report it.%s\n", ColorRed, ColorReset)
+	} else if analysis.ThreatScore >= 50 {
+		fmt.Printf("%s⚠️  HIGH RISK - Exercise extreme caution%s\n", ColorYellow, ColorReset)
+		fmt.Printf("%sOnly proceed if you're absolutely certain of the source.%s\n", ColorYellow, ColorReset)
+	} else if analysis.ThreatScore >= 30 {
+		fmt.Printf("%s🔶 MEDIUM RISK - Be cautious%s\n", ColorYellow, ColorReset)
+		fmt.Printf("%sVerify the sender before taking any action.%s\n", ColorYellow, ColorReset)
+	} else {
+		fmt.Printf("%s✅ LOW RISK - Appears relatively safe%s\n", ColorGreen, ColorReset)
+		fmt.Printf("%sStill recommended to verify the source.%s\n", ColorGreen, ColorReset)
+	}
+}
+
+func (m *Menu) shouldSaveReport() bool {
+	fmt.Printf("\n%s💾 Save detailed report to file? (y/n): %s", ColorCyan, ColorReset)
+	m.scanner.Scan()
+	response := strings.ToLower(strings.TrimSpace(m.scanner.Text()))
+	return response == "y" || response == "yes"
+}
+
+func (m *Menu) saveAnalysisReport(analysis *models.ThreatAnalysis) {
+	filename := fmt.Sprintf("netzilla_report_%s.txt", analysis.AnalysisID)
+	content := m.generateReportContent(analysis)
+	
+	err := os.WriteFile(filename, []byte(content), 0644)
+	if err != nil {
+		fmt.Printf("%s❌ Failed to save report: %v%s\n", ColorRed, err, ColorReset)
+		return
+	}
+	
+	fmt.Printf("%s✅ Report saved: %s%s\n", ColorGreen, filename, ColorReset)
+}
+
+func (m *Menu) generateReportContent(analysis *models.ThreatAnalysis) string {
+	var sb strings.Builder
+	
+	sb.WriteString("NET-ZILLA SECURITY ANALYSIS REPORT\n")
+	sb.WriteString("===================================\n\n")
+	
+	sb.WriteString(fmt.Sprintf("Analysis ID: %s\n", analysis.AnalysisID))
+	sb.WriteString(fmt.Sprintf("Analysis Time: %s\n", analysis.AnalyzedAt.Format("2006-01-02 15:04:05")))
+	sb.WriteString(fmt.Sprintf("URL: %s\n", analysis.URL))
+	sb.WriteString(fmt.Sprintf("Threat Level: %s\n", analysis.ThreatLevel))
+	sb.WriteString(fmt.Sprintf("Threat Score: %d/100\n\n", analysis.ThreatScore))
+	
+	// Add all analysis details...
+	
+	return sb.String()
+}
+
+// Other menu methods (analyzeSMSMessage, batchAnalysis, etc.) would follow similar patterns
+
+func (m *Menu) Cleanup() {
+	m.running = false
+}
+
+func formatBool(value bool, trueStr, falseStr string) string {
+	if value {
+		return trueStr
+	}
+	return falseStr
+}
+
+package utils
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"net-zilla/internal/ai"
