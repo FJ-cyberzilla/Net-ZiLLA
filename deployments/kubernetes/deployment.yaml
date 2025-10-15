@@ -1,0 +1,25 @@
+# deployments/kubernetes/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sms-analyzer
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sms-analyzer
+  template:
+    metadata:
+      labels:
+        app: sms-analyzer
+    spec:
+      containers:
+      - name: analyzer
+        image: sms-analyzer:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: analyzer-config
+        - secretRef:
+            name: analyzer-secrets
