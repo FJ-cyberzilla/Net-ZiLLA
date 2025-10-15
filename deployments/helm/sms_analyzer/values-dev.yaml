@@ -1,0 +1,32 @@
+# Development-specific dependency configurations
+
+app:
+  replicaCount: 1
+  image:
+    tag: "latest"
+    pullPolicy: Always
+
+pdb:
+  minAvailable: 1
+
+postgresql:
+  enabled: true
+  persistence:
+    enabled: false  # Use emptyDir in development
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+
+redis:
+  enabled: true
+  architecture: standalone
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      memory: 64Mi
+      cpu: 50m
+
+monitoring:
+  enabled: false  # Disable in development to save resources
