@@ -212,3 +212,133 @@ type analysisResult struct {
 func generateAnalysisID() string {
 	return fmt.Sprintf("nz-%d", time.Now().UnixNano())
 }
+package analyzer
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"net-zilla/internal/ai"
+	"net-zilla/internal/models"
+	"net-zilla/internal/utils"
+)
+
+// Enhanced ThreatAnalyzer with AI Orchestration
+type ThreatAnalyzer struct {
+	mlAgent        *ai.MLAgent
+	logger         *utils.Logger
+	redirectTracer *RedirectTracer
+	domainAnalyzer *DomainAnalyzer
+	securityClient *SafeHTTPClient
+	orchestrator   *ai.Orchestrator
+}
+
+func NewThreatAnalyzer(mlAgent *ai.MLAgent, logger *utils.Logger) *ThreatAnalyzer {
+	return &ThreatAnalyzer{
+		mlAgent:        mlAgent,
+		logger:         logger,
+		redirectTracer: NewRedirectTracer(logger),
+		domainAnalyzer: NewDomainAnalyzer(),
+		securityClient: NewSafeHTTPClient(),
+	}
+}
+
+// ComprehensiveAnalysis with AI Orchestration
+func (ta *ThreatAnalyzer) ComprehensiveAnalysis(ctx context.Context, targetURL string) (*models.ThreatAnalysis, error) {
+	startTime := time.Now()
+	
+	// Step 1: AI Orchestration
+	ta.logger.Info("🤖 Initializing AI Orchestrator...")
+	orchestration, err := ta.mlAgent.OrchestrateAnalysis(targetURL, "comprehensive")
+	if err != nil {
+		ta.logger.Warn("AI orchestration failed, using fallback: %v", err)
+	}
+
+	// Step 2: Perform analysis based on orchestration plan
+	analysis := &models.ThreatAnalysis{
+		URL:              targetURL,
+		AnalyzedAt:       startTime,
+		AnalysisID:       generateAnalysisID(),
+		AIOrchestration:  orchestration,
+	}
+
+	// Execute orchestrated tasks
+	if orchestration.Success {
+		ta.executeOrchestratedTasks(ctx, targetURL, analysis, orchestration)
+	} else {
+		// Fallback to standard analysis
+		ta.executeStandardAnalysis(ctx, targetURL, analysis)
+	}
+
+	analysis.AnalysisDuration = time.Since(startTime)
+	analysis.ThreatLevel = ta.determineThreatLevel(analysis.ThreatScore)
+
+	ta.logger.Info("Analysis completed with AI orchestration", 
+		"tasks", len(orchestration.TasksExecuted),
+		"performance", orchestration.PerformanceMetrics["efficiency_score"])
+
+	return analysis, nil
+}
+
+func (ta *ThreatAnalyzer) executeOrchestratedTasks(ctx context.Context, targetURL string, analysis *models.ThreatAnalysis, orchestration *ai.OrchestrationResult) {
+	// Execute tasks based on AI orchestration
+	for _, task := range orchestration.TasksExecuted {
+		switch task {
+		case "core_analysis":
+			ta.performCoreAnalysis(targetURL, analysis)
+		case "threat_analysis":
+			ta.performThreatAnalysis(ctx, targetURL, analysis)
+		case "ml_analysis":
+			ta.performMLAnalysis(targetURL, analysis)
+		case "web_analysis":
+			ta.performWebAnalysis(ctx, targetURL, analysis)
+		case "dns_analysis":
+			ta.performDNSAnalysis(targetURL, analysis)
+		}
+	}
+}
+
+func (ta *ThreatAnalyzer) performCoreAnalysis(targetURL string, analysis *models.ThreatAnalysis) {
+	// Basic URL analysis and parsing
+	parsedURL, err := ta.normalizeURL(targetURL)
+	if err == nil {
+		analysis.URL = parsedURL
+	}
+	
+	// Domain analysis
+	if parsedURL != "" {
+		score := ta.domainAnalyzer.AnalyzeBasic(parsedURL, analysis)
+		analysis.ThreatScore += score
+	}
+}
+
+func (ta *ThreatAnalyzer) performThreatAnalysis(ctx context.Context, targetURL string, analysis *models.ThreatAnalysis) {
+	// Advanced threat detection
+	redirects, score, err := ta.redirectTracer.TraceRedirects(ctx, targetURL)
+	if err == nil {
+		analysis.RedirectChain = redirects
+		analysis.RedirectCount = len(redirects)
+		analysis.ThreatScore += score
+	}
+	
+	// Security headers check
+	headers, securityScore, err := ta.securityClient.CheckSecurityHeaders(ctx, targetURL)
+	if err == nil {
+		analysis.SecurityHeaders = headers
+		analysis.ThreatScore += securityScore
+	}
+}
+
+func (ta *ThreatAnalyzer) performMLAnalysis(targetURL string, analysis *models.ThreatAnalysis) {
+	// AI-powered analysis
+	if ta.mlAgent != nil {
+		aiResult, err := ta.mlAgent.AnalyzeLink(targetURL, "")
+		if err == nil {
+			analysis.AIResult = aiResult
+			analysis.ThreatScore += int((1 - aiResult.Confidence) * 100)
+		}
+	}
+}
+
+// ... other task implementations
