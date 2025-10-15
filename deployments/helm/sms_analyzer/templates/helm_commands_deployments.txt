@@ -1,0 +1,8 @@
+# Development
+helm upgrade --install sms-analyzer ./deployments/helm/sms-analyzer -f values-dev.yaml
+
+# Production  
+helm upgrade --install sms-analyzer ./deployments/helm/sms-analyzer -f values-prod.yaml --namespace production --create-namespace
+
+# With custom values
+helm upgrade --install sms-analyzer ./deployments/helm/sms-analyzer --set app.replicaCount=5 --set database.password=$DB_PASSWORD
