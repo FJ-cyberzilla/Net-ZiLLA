@@ -1,0 +1,65 @@
+apiVersion: v2
+name: sms-analyzer
+description: Enterprise SMS Link Security Analysis Platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+dependencies:
+  - name: redis
+    version: 17.0.0
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+    tags:
+      - database
+      - cache
+
+  - name: postgresql
+    version: 12.0.0
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+    tags:
+      - database
+      - persistence
+
+  - name: cert-manager
+    version: v1.13.0
+    repository: https://charts.jetstack.io
+    condition: cert-manager.enabled
+    tags:
+      - ssl
+      - tls
+
+  - name: prometheus
+    version: 15.0.0
+    repository: https://prometheus-community.github.io/helm-charts
+    condition: monitoring.prometheus.enabled
+    tags:
+      - monitoring
+      - metrics
+
+  - name: grafana
+    version: 6.40.0
+    repository: https://grafana.github.io/helm-charts
+    condition: monitoring.grafana.enabled
+    tags:
+      - monitoring
+      - dashboard
+
+maintainers:
+  - name: Net-Zilla Team
+    email: cyberzilla.systems@gmail.com
+
+keywords:
+  - security
+  - sms
+  - phishing
+  - analysis
+  - cybersecurity
+
+annotations:
+  artifacthub.io/links: |
+    - name: Source Code
+      url: https://github.com/FJ-cyberzilla/net-zilla
+    - name: Documentation
+      url: https://github.com/FJ-cyberzilla/net-zilla/docs
