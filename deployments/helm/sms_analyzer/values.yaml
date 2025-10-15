@@ -90,3 +90,95 @@ autoscaling:
   maxReplicas: 10
   targetCPUUtilizationPercentage: 80
   targetMemoryUtilizationPercentage: 80
+
+  # deployments/helm/sms-analyzer/values.yaml
+
+# Application Configuration
+app:
+  replicaCount: 3
+  image:
+    repository: your-registry/sms-analyzer
+    tag: latest
+    pullPolicy: IfNotPresent
+    pullSecret: ""  # For private registries
+
+# Pod Disruption Budget
+pdb:
+  minAvailable: "50%"  # Ensure at least 50% of pods are always available
+
+# Database Dependencies
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: ""  # Will be generated if empty
+    username: "analyzer"
+    password: ""  # Will be generated if empty
+    database: "sms_analyzer"
+  persistence:
+    enabled: true
+    size: 10Gi
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+
+# Cache Dependencies
+redis:
+  enabled: true
+  auth:
+    password: ""  # Will be generated if empty
+  architecture: standalone
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+
+# API Keys for External Services
+apiKeys:
+  virusTotal: ""
+  abuseIPDB: ""
+  googleSafeBrowsing: ""
+  ip2Location: ""
+
+# Authentication
+auth:
+  jwtSecret: ""  # Will be generated if empty
+
+# Security
+security:
+  encryptionKey: ""  # Will be generated if empty
+
+# Monitoring Dependencies
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+    adminPassword: ""  # Will be generated if empty
+
+# Cert Manager for TLS
+cert-manager:
+  enabled: true
+
+# Resource configurations for dependencies
+resources:
+  postgresql:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  
+  redis:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
