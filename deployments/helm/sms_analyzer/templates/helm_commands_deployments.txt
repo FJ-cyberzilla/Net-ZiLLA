@@ -6,3 +6,18 @@ helm upgrade --install sms-analyzer ./deployments/helm/sms-analyzer -f values-pr
 
 # With custom values
 helm upgrade --install sms-analyzer ./deployments/helm/sms-analyzer --set app.replicaCount=5 --set database.password=$DB_PASSWORD
+----------------------------------
+# List releases
+helm list
+
+# Check status
+helm status sms-analyzer
+
+# View values
+helm get values sms-analyzer
+
+# Rollback
+helm rollback sms-analyzer 1
+
+# Uninstall
+helm uninstall sms-analyzer
