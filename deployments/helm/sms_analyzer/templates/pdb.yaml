@@ -1,0 +1,45 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "sms-analyzer.fullname" . }}
+  labels:
+    {{- include "sms-analyzer.labels" . | nindent 4 }}
+    app.kubernetes.io/component: analyzer
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "sms-analyzer.selectorLabels" . | nindent 6 }}
+---
+# For the dependencies (Redis, PostgreSQL)
+{{- if .Values.redis.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "sms-analyzer.fullname" . }}-redis
+  labels:
+    {{- include "sms-analyzer.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{- if .Values.postgresql.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "sms-analyzer.fullname" . }}-postgresql
+  labels:
+    {{- include "sms-analyzer.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgresql
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgresql
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
