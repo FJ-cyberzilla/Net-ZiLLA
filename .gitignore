@@ -1,0 +1,67 @@
+# Binaries
+/net-zilla
+/net-zilla.exe
+/bin/
+/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+vendor/
+/go/pkg/
+/go/bin/
+
+# Reports
+/reports/
+*.txt
+*.pdf
+*.json
+
+# Configuration
+.env
+config.local.yaml
+secrets.yaml
+
+# Logs
+*.log
+logs/
+
+# Julia cache
+.julia/
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+
+# Build artifacts
+/build/
+/cover.out
+coverage.txt
+
+# Temporary files
+tmp/
+temp/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+
+# ML Models (large files)
+/ml/models/*.jlso
+/ml/models/*.bson
+
+# Installation scripts
+/scripts/install_julia.sh
+/scripts/setup_ml.sh
