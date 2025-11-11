@@ -73,7 +73,7 @@ func (s *SSLClient) testProtocol(host string, version uint16) bool {
 	conn, err := tls.DialWithDialer(&net.Dialer{
 		Timeout: s.timeout,
 	}, "tcp", host+":443", &tls.Config{
-		InsecureSkipVerify: true, // We're just testing support
+		InsecureSkipVerify: false, // We're just testing support
 		MinVersion:         version,
 		MaxVersion:         version,
 	})
