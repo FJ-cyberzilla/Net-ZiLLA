@@ -124,6 +124,9 @@ func (s *SSLClient) gradeCertificate(cert *tls.Certificate) string {
 }
 
 func (s *SSLClient) checkWeakCiphers(host string) bool {
+	// WARNING: The cipher suites below are considered insecure.
+	// They are used **only** for analyzing whether a remote host still allows connections with these weak ciphers.
+	// DO NOT use these ciphers for normal communications.
 	weakCiphers := []uint16{
 		tls.TLS_RSA_WITH_RC4_128_SHA,
 		tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
@@ -131,6 +134,9 @@ func (s *SSLClient) checkWeakCiphers(host string) bool {
 	}
 
 	for _, cipher := range weakCiphers {
+		// The following connection is made with a single insecure cipher
+		// suite to test if the remote host supports weak ciphers.
+		// No sensitive data is transmitted over this connection.
 		conn, err := tls.DialWithDialer(&net.Dialer{
 			Timeout: s.timeout,
 		}, "tcp", host+":443", &tls.Config{
