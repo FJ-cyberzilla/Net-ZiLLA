@@ -30,12 +30,12 @@ type ParsedURL struct {
 func NewURLParser() *URLParser {
 	return &URLParser{
 		shortenerPatterns: []*regexp.Regexp{
-			regexp.MustCompile(`bit\.ly`),
-			regexp.MustCompile(`tinyurl\.com`),
-			regexp.MustCompile(`goo\.gl`),
-			regexp.MustCompile(`ow\.ly`),
-			regexp.MustCompile(`t\.co`),
-			regexp.MustCompile(`buff\.ly`),
+			regexp.MustCompile(`^bit\.ly$`),
+			regexp.MustCompile(`^tinyurl\.com$`),
+			regexp.MustCompile(`^goo\.gl$`),
+			regexp.MustCompile(`^ow\.ly$`),
+			regexp.MustCompile(`^t\.co$`),
+			regexp.MustCompile(`^buff\.ly$`),
 		},
 		obfuscationPatterns: []*regexp.Regexp{
 			regexp.MustCompile(`%[0-9A-Fa-f]{2}`), // URL encoding
