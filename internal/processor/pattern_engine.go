@@ -132,6 +132,16 @@ func (p *PatternEngine) AnalyzeURL(url string) []PatternMatch {
 		})
 	}
 
+	// Check for VBScript URLs
+	if strings.HasPrefix(url, "vbscript:") {
+		matches = append(matches, PatternMatch{
+			Type:       "malware",
+			Pattern:    "vbscript_uri",
+			Matches:    []string{url},
+			Confidence: 0.9,
+		})
+	}
+
 	// Check for excessive encoding
 	if strings.Count(url, "%") > 5 {
 		matches = append(matches, PatternMatch{
