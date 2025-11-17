@@ -90,7 +90,7 @@ func (s *SSLClient) getCertificate(host string) (*tls.Certificate, error) {
 	conn, err := tls.DialWithDialer(&net.Dialer{
 		Timeout: s.timeout,
 	}, "tcp", host+":443", &tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: false,
 	})
 
 	if err != nil {
