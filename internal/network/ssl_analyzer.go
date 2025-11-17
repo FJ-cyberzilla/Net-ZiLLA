@@ -142,6 +142,7 @@ func (s *SSLClient) checkWeakCiphers(host string) bool {
 		}, "tcp", host+":443", &tls.Config{
 			InsecureSkipVerify: true,
 			CipherSuites:       []uint16{cipher},
+			MinVersion:         tls.VersionTLS12,
 		})
 
 		if err == nil {
