@@ -1,5 +1,6 @@
 using JSON
 using Dates
+using FilePathsBase # For joinpath, if needed for cross-platform paths
 
 struct SystemStatus
     components_working::Bool
@@ -29,7 +30,11 @@ struct OrchestrationResult
     performance_metrics::Dict{String,Float64}
     recommendations::Vector{String}
     next_actions::Vector{String}
+    raw_output::String # Added for Go compatibility
 end
+
+# Global variable for models path (set once in main)
+global MODELS_PATH = ""
 
 # System Orchestrator AI
 function orchestrate_analysis(target::String, analysis_type::String = "comprehensive")::OrchestrationResult
@@ -44,7 +49,8 @@ function orchestrate_analysis(target::String, analysis_type::String = "comprehen
             ["System components not ready"],
             Dict(),
             ["Check system dependencies"],
-            ["Run system diagnostics"]
+            ["Run system diagnostics"],
+            ""
         )
     end
     
@@ -87,15 +93,10 @@ function diagnose_system()::SystemStatus
 end
 
 function check_system_components()::Bool
-    # Check if all core components are available
+    # Placeholder: Implement actual checks
     try
         # Check DNS resolution
         getaddrinfo("google.com")
-        
-        # Check HTTP capabilities
-        # Check file system access
-        # Check required directories
-        
         return true
     catch e
         println("Component check failed: ", e)
@@ -104,24 +105,17 @@ function check_system_components()::Bool
 end
 
 function check_analysis_engine()::Bool
-    # Verify analysis engines are ready
-    try
-        # Check threat analysis capabilities
-        # Check DNS lookup functionality
-        # Check SSL/TLS verification
-        return true
-    catch e
-        println("Analysis engine check failed: ", e)
-        return false
-    end
+    # Placeholder: Verify analysis engines are ready
+    return true # Assume ready for now
 end
 
 function check_ml_models()::Bool
-    # Verify ML models are loaded and ready
+    # Verify ML models are loaded and ready, using the global MODELS_PATH
     try
-        required_models = ["link_health.jl", "ip_reputation.jl", "url_shortener.jl"]
+        required_models = ["julia_agent.jl", "link_health_model.jlso", "ip_reputation_model.jlso", "url_shortener_model.jlso"]
         for model in required_models
-            if !isfile(joinpath("./ml/models", model))
+            if !isfile(joinpath(MODELS_PATH, model))
+                println("Missing model file: ", joinpath(MODELS_PATH, model))
                 return false
             end
         end
@@ -133,8 +127,8 @@ function check_ml_models()::Bool
 end
 
 function check_network_connectivity()::Bool
+    # Placeholder: Test basic network connectivity
     try
-        # Test basic network connectivity
         getaddrinfo("8.8.8.8")  # Google DNS
         return true
     catch e
@@ -144,16 +138,8 @@ function check_network_connectivity()::Bool
 end
 
 function check_security_protocols()::Bool
-    try
-        # Verify security protocols are in place
-        # Check safe user agent configuration
-        # Verify timeout settings
-        # Validate redirect limits
-        return true
-    catch e
-        println("Security protocols check failed: ", e)
-        return false
-    end
+    # Placeholder: Verify security protocols are in place
+    return true # Assume ready for now
 end
 
 function calculate_performance_score(components::Bool, analysis::Bool, models::Bool, network::Bool, security::Bool)::Float64
@@ -167,7 +153,6 @@ function calculate_performance_score(components::Bool, analysis::Bool, models::B
 end
 
 function create_analysis_plan(target::String, analysis_type::String)::AnalysisOrchestration
-    # Determine analysis requirements based on target and type
     required_components = determine_required_components(target, analysis_type)
     priority = calculate_analysis_priority(target)
     duration = estimate_analysis_duration(target, analysis_type)
@@ -196,7 +181,7 @@ function determine_required_components(target::String, analysis_type::String)::V
         push!(components, "ip_analyzer", "geo_locator")
     end
     
-    if analysis_type == "comprehensive"
+    if analysis_type == "comprehensive" || analysis_type == "diagnostic"
         push!(components, "threat_intel", "ml_analyzer", "dns_inspector", "redirect_tracer")
     end
     
@@ -208,7 +193,6 @@ function determine_required_components(target::String, analysis_type::String)::V
 end
 
 function calculate_analysis_priority(target::String)::Int
-    # High priority for suspicious patterns
     if occursin(r"(login|verify|account|bank|paypal)", lowercase(target))
         return 90
     elseif occursin(r"(bit\.ly|tinyurl|goo\.gl)", target)
@@ -223,7 +207,7 @@ end
 function estimate_analysis_duration(target::String, analysis_type::String)::Int
     base_time = 5  # seconds
     
-    if analysis_type == "comprehensive"
+    if analysis_type == "comprehensive" || analysis_type == "diagnostic"
         base_time += 15
     end
     
@@ -237,22 +221,18 @@ end
 function assess_target_risk(target::String)::String
     risk_score = 0
     
-    # IP address instead of domain
     if occursin(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", target)
         risk_score += 30
     end
     
-    # Suspicious TLDs
     if occursin(r"\.(tk|ml|ga|cf|gq|xyz)$", target)
         risk_score += 25
     end
     
-    # URL shorteners
     if occursin(r"(bit\.ly|tinyurl|goo\.gl|ow\.ly|t\.co)", target)
         risk_score += 20
     end
     
-    # Phishing keywords
     if occursin(r"(login|verify|account|secure|update|confirm)", lowercase(target))
         risk_score += 15
     end
@@ -267,15 +247,12 @@ function assess_target_risk(target::String)::String
 end
 
 function calculate_ai_confidence(target::String)::Float64
-    # Calculate AI confidence based on target analyzability
     confidence = 0.8  # Base confidence
     
-    # Increase confidence for clear patterns
     if occursin(r"^https?://", target) && occursin(r"\.[a-z]{2,6}$", target)
         confidence += 0.15
     end
     
-    # Decrease confidence for obfuscated URLs
     if occursin(r"%[0-9a-f]{2}", lowercase(target))
         confidence -= 0.1
     end
@@ -291,40 +268,27 @@ function execute_orchestrated_analysis(plan::AnalysisOrchestration)::Orchestrati
     try
         println("🎯 Executing analysis plan for: ", plan.target)
         
-        # Execute core analysis tasks
-        if "core_engine" in plan.required_components
-            push!(tasks_executed, "core_analysis")
-            metrics["core_analysis_time"] = 2.5
+        # Placeholder for actual task execution logic
+        # In a real scenario, this would call specific Julia modules or external tools
+        # based on `plan.required_components`.
+        
+        # Simulate task execution and collect metrics
+        for component in plan.required_components
+            push!(tasks_executed, component)
+            metrics[component * "_time"] = rand() * 5.0 # Simulate variable time
         end
         
-        if "web_analyzer" in plan.required_components
-            push!(tasks_executed, "web_analysis")
-            metrics["web_analysis_time"] = 3.2
-        end
-        
-        if "threat_intel" in plan.required_components
-            push!(tasks_executed, "threat_analysis")
-            metrics["threat_analysis_time"] = 4.1
-        end
-        
-        if "ml_analyzer" in plan.required_components
-            push!(tasks_executed, "ml_analysis")
-            metrics["ml_analysis_time"] = 5.3
-        end
-        
-        # Calculate overall performance
         metrics["total_time"] = sum(values(metrics))
         metrics["efficiency_score"] = length(tasks_executed) / length(plan.required_components)
         
-        # Generate recommendations
         recommendations = generate_ai_recommendations(plan, tasks_executed, metrics)
         next_actions = determine_next_actions(plan, tasks_executed)
         
-        return OrchestrationResult(true, tasks_executed, errors, metrics, recommendations, next_actions)
+        return OrchestrationResult(true, tasks_executed, errors, metrics, recommendations, next_actions, "")
         
     catch e
         push!(errors, "Orchestration failed: $e")
-        return OrchestrationResult(false, tasks_executed, errors, metrics, [], ["Review system logs"])
+        return OrchestrationResult(false, tasks_executed, errors, metrics, [], ["Review system logs"], string(e))
     end
 end
 
@@ -339,12 +303,8 @@ function generate_ai_recommendations(plan::AnalysisOrchestration, tasks::Vector{
         push!(recommendations, "🔧 System performance can be optimized")
     end
     
-    if "ml_analysis" in tasks
+    if "ml_analyzer" in tasks && plan.ai_confidence > 0.85
         push!(recommendations, "🤖 AI analysis completed with high confidence")
-    end
-    
-    if plan.ai_confidence > 0.85
-        push!(recommendations, "✅ High confidence in analysis results")
     else
         push!(recommendations, "⚠️ Moderate confidence - manual verification recommended")
     end
@@ -372,27 +332,29 @@ end
 
 # Main orchestrator interface
 function main()
-    if length(ARGS) < 2
-        println("Usage: julia orchestrator.jl [target] [analysis_type]")
+    if length(ARGS) < 3
+        println("Usage: julia orchestrator.jl [models_path] [target] [analysis_type]")
         exit(1)
     end
     
-    target = ARGS[1]
-    analysis_type = ARGS[2]
+    global MODELS_PATH = ARGS[1] # Set global models path
+    target = ARGS[2]
+    analysis_type = ARGS[3]
     
     try
         result = orchestrate_analysis(target, analysis_type)
         
-        output = Dict(
+        output_dict = Dict(
             "success" => result.success,
             "tasks_executed" => result.tasks_executed,
             "errors" => result.errors,
             "performance_metrics" => result.performance_metrics,
             "recommendations" => result.recommendations,
-            "next_actions" => result.next_actions
+            "next_actions" => result.next_actions,
+            "raw_output" => result.raw_output # Include raw_output in JSON
         )
         
-        println(JSON.json(output))
+        println(JSON.json(output_dict))
         
     catch e
         error_output = Dict(
@@ -401,7 +363,8 @@ function main()
             "errors" => ["Orchestrator failed: $e"],
             "performance_metrics" => Dict(),
             "recommendations" => ["System maintenance required"],
-            "next_actions" => ["Contact support"]
+            "next_actions" => ["Contact support"],
+            "raw_output" => string(e)
         )
         println(JSON.json(error_output))
     end

@@ -179,7 +179,7 @@ func (a *BehavioralAnalyzer) generateRecommendations(behavioral *BehavioralAnaly
 func (a *BehavioralAnalyzer) extractDomain(url string) string {
 	// Simple domain extraction
 	// In production, use proper URL parsing
-	return "" // Placeholder
+	return "" // TODO: Implement actual behavioral analysis logic
 }
 
 func max(a, b int) int {

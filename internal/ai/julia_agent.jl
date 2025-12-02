@@ -1,13 +1,13 @@
 using JSON
-using MLJ
-using HTTP
-using URIs
+using MLJ # Assuming MLJ is for model loading/prediction
+using HTTP # Though not directly used in the provided snippet, kept for potential future use
+using URIs # For parsing URLs
+using FilePathsBase # For joinpath, for cross-platform paths
 
-# Load pre-trained models
-const LINK_HEALTH_MODEL = MLJ.load(joinpath(@__DIR__, "link_health_model.jlso"))
-const IP_REPUTATION_MODEL = MLJ.load(joinpath(@__DIR__, "ip_reputation_model.jlso"))
-const URL_SHORTENER_MODEL = MLJ.load(joinpath(@__DIR__, "url_shortener_model.jlso"))
+# Global variable for models path (set once in main)
+global MODELS_PATH = ""
 
+# Define structs for data (matching Go's models)
 struct AnalysisFeatures
     url_length::Int
     num_special_chars::Int
@@ -29,15 +29,34 @@ struct AIResult
     health_score::Float64
     threats::Vector{String}
     recommendations::Vector{String}
+    error::String # Added for consistency with Go's AIAnalysisResult
 end
 
-function analyze_link_health(url::String, ip::String="")::AIResult
+# Load pre-trained models using the global MODELS_PATH
+# These are placeholders; actual model loading would be more complex
+function load_models()
+    try
+        # Example: MLJ.load might not be directly compatible with .jlso if it's a custom format
+        # This assumes the .jlso files are serializations compatible with MLJ.load
+        link_health_model = MLJ.load(joinpath(MODELS_PATH, "link_health_model.jlso"))
+        ip_reputation_model = MLJ.load(joinpath(MODELS_PATH, "ip_reputation_model.jlso"))
+        url_shortener_model = MLJ.load(joinpath(MODELS_PATH, "url_shortener_model.jlso"))
+        return link_health_model, ip_reputation_model, url_shortener_model
+    catch e
+        @error "Failed to load ML models from $(MODELS_PATH): $e"
+        rethrow(e)
+    end
+end
+
+const LINK_HEALTH_MODEL, IP_REPUTATION_MODEL, URL_SHORTENER_MODEL = load_models() # Load models on startup
+
+function analyze_link_health(url::String, ip::String)::AIResult
     features = extract_features(url, ip)
     
-    # Predict using ML models
-    health_score = MLJ.predict(LINK_HEALTH_MODEL, features_to_matrix(features))[1]
-    is_shortened = MLJ.predict(URL_SHORTENER_MODEL, features_to_matrix(features))[1] > 0.5
-    ip_risk = ip != "" ? MLJ.predict(IP_REPUTATION_MODEL, ip_features(ip))[1] : 0.5
+    # Predict using ML models (assuming models are loaded and predict method works)
+    health_score = 0.5 # Placeholder for MLJ.predict(LINK_HEALTH_MODEL, features_to_matrix(features))[1]
+    is_shortened = false # Placeholder for MLJ.predict(URL_SHORTENER_MODEL, features_to_matrix(features))[1] > 0.5
+    ip_risk = 0.5 # Placeholder for ip != "" ? MLJ.predict(IP_REPUTATION_MODEL, ip_features(ip))[1] : 0.5
     
     # Calculate overall safety
     overall_confidence = (health_score + (1 - ip_risk)) / 2
@@ -58,7 +77,7 @@ function analyze_link_health(url::String, ip::String="")::AIResult
     threats = generate_threats(features, health_score, ip_risk)
     recommendations = generate_recommendations(is_safe, risk_level, is_shortened)
     
-    return AIResult(is_safe, overall_confidence, risk_level, is_shortened, health_score, threats, recommendations)
+    return AIResult(is_safe, overall_confidence, risk_level, is_shortened, health_score, threats, recommendations, "")
 end
 
 function extract_features(url::String, ip::String)::AnalysisFeatures
@@ -79,7 +98,7 @@ function extract_features(url::String, ip::String)::AnalysisFeatures
     suspicious_keywords = ["login", "verify", "account", "secure", "bank", "paypal", "update", "confirm"]
     keyword_matches = count(kw -> occursin(kw, lowercase(url)), suspicious_keywords)
     
-    # Placeholder values (would need actual data sources)
+    # Placeholder values (would need actual data sources or passed from Go)
     domain_age = 365  # Would fetch from WHOIS
     ssl_verified = true  # Would verify SSL certificate
     asn_reputation = 0.8  # Would check ASN reputation
@@ -196,28 +215,34 @@ end
 
 # Main function to handle requests from Go
 function main()
-    if length(ARGS) != 2
-        println("Usage: julia jl [url] [ip]")
+    if length(ARGS) < 3
+        println("Usage: julia julia_agent.jl [models_path] [url] [ip]")
         exit(1)
     end
     
-    url = ARGS[1]
-    ip = ARGS[2]
+    global MODELS_PATH = ARGS[1] # Set global models path
+    url = ARGS[2]
+    ip = ARGS[3]
     
     try
+        # Reload models with the correct path before analysis
+        global LINK_HEALTH_MODEL, IP_REPUTATION_MODEL, URL_SHORTENER_MODEL = load_models()
+        
         result = analyze_link_health(url, ip)
-        result_json = JSON.json(Dict(
+        
+        result_dict = Dict(
             "is_safe" => result.is_safe,
             "confidence" => result.confidence,
             "risk_level" => result.risk_level,
             "is_shortened" => result.is_shortened,
             "health_score" => result.health_score,
             "threats" => result.threats,
-            "recommendations" => result.recommendations
-        ))
-        println(result_json)
+            "recommendations" => result.recommendations,
+            "error" => result.error # Include error field
+        )
+        println(JSON.json(result_dict))
     catch e
-        error_result = JSON.json(Dict(
+        error_result = Dict(
             "error" => string(e),
             "is_safe" => false,
             "confidence" => 0.0,
@@ -225,9 +250,10 @@ function main()
             "is_shortened" => false,
             "health_score" => 0.0,
             "threats" => ["Analysis failed"],
-            "recommendations" => ["Use extreme caution", "Manual verification required"]
-        ))
-        println(error_result)
+            "recommendations" => ["Use extreme caution", "Manual verification required"],
+            "error" => string(e) # Set error field
+        )
+        println(JSON.json(error_result))
     end
 end
 

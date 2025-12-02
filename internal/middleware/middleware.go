@@ -1,104 +1,185 @@
-// internal/middleware/middleware.go
 package middleware
 
 import (
 	"context"
-	"log"
+	"encoding/json"
+	"fmt"
+	"log" // Using standard log for internal middleware logging, can be replaced by utils.Logger
 	"net/http"
+	"strings"
+	"sync"
 	"time"
+
+	"net-zilla/internal/utils" // For logger
 )
 
+// Middleware is a function that takes an http.Handler and returns an http.Handler.
 type Middleware func(http.Handler) http.Handler
 
+// MiddlewareStack holds configured middleware services.
 type MiddlewareStack struct {
-	rateLimiter *RateLimiter
-	auth        *AuthService
+	logger *utils.Logger
+	// Add other services needed by middleware here (e.g., auth service, rate limiter service)
 }
 
-func NewMiddleware() *MiddlewareStack {
+// NewMiddleware creates a new MiddlewareStack.
+func NewMiddleware(logger *utils.Logger) *MiddlewareStack {
 	return &MiddlewareStack{
-		rateLimiter: NewRateLimiter(100, time.Minute), // 100 requests/minute
-		auth:        NewAuthService(),
+		logger: logger,
 	}
 }
 
-func (m *MiddlewareStack) Chain(h http.Handler, middleware ...Middleware) http.Handler {
+// Chain applies a list of middleware to a http.Handler.
+func (ms *MiddlewareStack) Chain(h http.Handler, middleware ...Middleware) http.Handler {
 	for i := len(middleware) - 1; i >= 0; i-- {
 		h = middleware[i](h)
 	}
 	return h
 }
 
-// Logger middleware
-func Logger(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		
-		next.ServeHTTP(w, r)
-		
-		log.Printf("%s %s %s %v", r.Method, r.URL.Path, r.RemoteAddr, time.Since(start))
-	})
+// LoggerMiddleware logs incoming HTTP requests.
+func LoggerMiddleware(logger *utils.Logger) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			next.ServeHTTP(w, r)
+			logger.Info("HTTP Request: %s %s from %s took %v", r.Method, r.URL.Path, r.RemoteAddr, time.Since(start))
+		})
+	}
 }
 
-// Authentication middleware
-func Auth(next http.Handler) http.Handler {
+// AuthMiddleware handles API key or token authentication.
+func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		if token == "" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			RespondWithError(w, http.StatusUnauthorized, "Authorization token required")
 			return
 		}
 
-		// Validate API key or JWT token
-		if !isValidToken(token) {
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
+		// TODO: Implement proper token validation logic using a real auth service
+		if !isValidToken(token) { // Placeholder validation
+			RespondWithError(w, http.StatusUnauthorized, "Invalid or expired token")
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		// If token is valid, potentially store user info in context
+		ctx := context.WithValue(r.Context(), "user", "authenticated_user")
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-// Rate limiting middleware
-func RateLimit(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		clientIP := getClientIP(r)
-		if !rateLimiter.Allow(clientIP) {
-			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
+// RateLimitMiddleware applies rate limiting based on client IP.
+type RateLimiter struct {
+	clients map[string]*Client
+	mu      sync.Mutex
+	rate    int           // requests per interval
+	interval time.Duration // time interval for rate limiting
 }
 
-// CORS middleware
-func CORS(next http.Handler) http.Handler {
+type Client struct {
+	lastRequest time.Time
+	requests    int
+}
+
+// NewRateLimiter creates a new RateLimiter.
+func NewRateLimiter(rate int, interval time.Duration) *RateLimiter {
+	return &RateLimiter{
+		clients: make(map[string]*Client),
+		rate: rate,
+		interval: interval,
+	}
+}
+
+// Allow checks if a client is allowed to make a request.
+func (rl *RateLimiter) Allow(ip string) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	client, found := rl.clients[ip]
+	if !found {
+		rl.clients[ip] = &Client{lastRequest: time.Now(), requests: 1}
+		return true
+	}
+
+	if time.Since(client.lastRequest) > rl.interval {
+		client.lastRequest = time.Now()
+		client.requests = 1
+		return true
+	}
+
+	if client.requests < rl.rate {
+		client.requests++
+		return true
+	}
+
+	return false
+}
+
+// RateLimitMiddleware applies rate limiting based on client IP.
+func RateLimitMiddleware(rateLimit int) Middleware { // Rate limit configurable
+	limiter := NewRateLimiter(rateLimit, time.Minute) // Default interval to 1 minute
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			clientIP := getClientIP(r)
+			if !limiter.Allow(clientIP) {
+				RespondWithError(w, http.StatusTooManyRequests, "Rate limit exceeded")
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// CORSHeaderMiddleware adds CORS headers to responses.
+func CORSHeaderMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		
+
 		if r.Method == "OPTIONS" {
 			return
 		}
-		
 		next.ServeHTTP(w, r)
 	})
 }
 
+// Helper functions (moved from old middleware.go or added)
+
 func getClientIP(r *http.Request) string {
-	// Check for forwarded IP first
 	if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
-		return ip
+		return strings.Split(ip, ",")[0] // Take the first IP if multiple
 	}
 	if ip := r.Header.Get("X-Real-IP"); ip != "" {
 		return ip
+	}
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		return host
 	}
 	return r.RemoteAddr
 }
 
 func isValidToken(token string) bool {
-	// Implement proper token validation
-	return len(token) > 10
+	// TODO: Implement proper token validation (e.g., JWT verification, API key lookup)
+	return len(token) > 10 // Placeholder: basic length check
+}
+
+// RespondWithError sends a JSON error response.
+func RespondWithError(w http.ResponseWriter, code int, message string) {
+	RespondWithJSON(w, code, map[string]string{"error": message})
+}
+
+// RespondWithJSON sends a JSON response.
+func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
+	response, err := json.Marshal(payload)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error":"Failed to marshal JSON response"}`))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	w.Write(response)
 }

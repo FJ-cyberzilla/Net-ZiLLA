@@ -90,7 +90,7 @@ func (a *SSLAnalyzer) getKeySize(cert *x509.Certificate) int {
 func (a *SSLAnalyzer) checkOCSPStapling(domain string) bool {
 	// Simplified OCSP stapling check
 	// In production, would perform actual OCSP request
-	return true // Placeholder
+	return false // TODO: Implement actual SSL validation logic
 }
 
 func (a *SSLAnalyzer) checkHSTS(domain string) bool {
