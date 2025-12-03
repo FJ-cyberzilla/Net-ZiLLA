@@ -169,7 +169,7 @@ func (sa *SSLAnalyzer) checkWeakCiphers(ctx context.Context, host string) bool {
 		}, "tcp", net.JoinHostPort(host, "443"), &tls.Config{
 			InsecureSkipVerify: true, // Not verifying, just checking if connection establishes
 			CipherSuites:       []uint16{cipher},
-			MinVersion:         tls.VersionTLS10, // Some weak ciphers might only work with older TLS versions
+			MinVersion:         tls.VersionTLS12, // Use only secure protocol versions for analysis
 			MaxVersion:         tls.VersionTLS12,
 		})
 
