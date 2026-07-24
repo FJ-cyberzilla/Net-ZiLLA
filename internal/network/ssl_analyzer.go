@@ -87,9 +87,9 @@ func (sa *SSLAnalyzer) testProtocol(ctx context.Context, host string, version ui
 	conn, err := tls.DialWithDialer(&net.Dialer{
 		Timeout: sa.timeout,
 	}, "tcp", net.JoinHostPort(host, "443"), &tls.Config{
-		InsecureSkipVerify: true, // We're just testing support, not validating
-		MinVersion:         version,
-		MaxVersion:         version,
+		ServerName: host,
+		MinVersion: version,
+		MaxVersion: version,
 	})
 
 	if err != nil {
