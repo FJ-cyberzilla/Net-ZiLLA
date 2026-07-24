@@ -4,9 +4,9 @@ from typing import Any, Dict
 
 class Config:
     def __init__(self, config_path: str = "config.yaml"):
-        self.config: Dict[str, Any] = self._load_config(config_path)
+        self.config: dict[str, Any] = self._load_config(config_path)
 
-    def _load_config(self, path: str) -> Dict[str, Any]:
+    def _load_config(self, path: str) -> dict[str, Any]:
         defaults = {
             "server": {"host": "localhost", "port": 8080, "mode": "development", "enable_api": True, "enable_cli": True},
             "database": {"driver": "sqlite3", "host": "localhost", "port": 5432, "ssl_mode": "disable"},
@@ -43,7 +43,7 @@ class Config:
         }
         
         if os.path.exists(path):
-            with open(path, 'r') as f:
+            with open(path) as f:
                 loaded = yaml.safe_load(f)
                 if loaded:
                     self._merge_defaults(defaults, loaded)

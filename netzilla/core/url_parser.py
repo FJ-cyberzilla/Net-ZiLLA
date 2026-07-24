@@ -13,7 +13,7 @@ class ParsedURL:
     subdomain: str
     tld: str
     path: str
-    query_params: Dict[str, str] = field(default_factory=dict)
+    query_params: dict[str, str] = field(default_factory=dict)
     is_shortened: bool = False
     is_obfuscated: bool = False
     has_ip: bool = False
@@ -35,7 +35,7 @@ class URLParser:
         ]
         self.ip_pattern = re.compile(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
 
-    def parse_and_analyze(self, raw_url: str) -> Optional[ParsedURL]:
+    def parse_and_analyze(self, raw_url: str) -> ParsedURL | None:
         try:
             normalized = self._normalize_url(raw_url)
             u = urlparse(normalized)
@@ -75,7 +75,7 @@ class URLParser:
         # Reconstruct URL (simplistic)
         return f"{u.scheme}://{host}{u.path}"
 
-    def _extract_domain_parts(self, host: str) -> Tuple[str, str]:
+    def _extract_domain_parts(self, host: str) -> tuple[str, str]:
         parts = host.split(".")
         if len(parts) < 2:
             return "", host

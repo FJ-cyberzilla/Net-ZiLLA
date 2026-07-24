@@ -6,90 +6,70 @@ from netzilla.models.dns import DNSAnalysis
 
 class DNSClient:
     def __init__(self, timeout: float = 10.0):
-        self.resolver = dns.resolver.Resolver()
-        self.resolver.nameservers = ['8.8.8.8']
+        self.resolver = dns.resolver.Resolver(configure=False)
+        self.resolver.nameservers = ['1.1.1.1']
         self.resolver.timeout = timeout
         self.resolver.lifetime = timeout
         self.logger = logging.getLogger(__name__)
 
-    def lookup(self, domain: str) -> DNSAnalysis:
+    async def lookup(self, domain: str) -> DNSAnalysis:
         analysis = DNSAnalysis()
-
-        # A/AAAA
-        try:
-            answers = self.resolver.resolve(domain, 'A')
-            for rdata in answers:
-                analysis.a_records.append(str(rdata))
-        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
-            self.logger.warning(f"DNS A lookup failed for {domain}")
-
-        try:
-            answers = self.resolver.resolve(domain, 'AAAA')
-            for rdata in answers:
-                analysis.aaaa_records.append(str(rdata))
-        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
-            self.logger.warning(f"DNS AAAA lookup failed for {domain}")
-
-        # CNAME
-        try:
-            answers = self.resolver.resolve(domain, 'CNAME')
-            analysis.cname = str(answers[0].target)
-        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
-            pass # CNAME often fails if not present
-
-        # MX
-        try:
-            answers = self.resolver.resolve(domain, 'MX')
-            for rdata in answers:
-                analysis.mx_records.append(f"{rdata.exchange} (prio:{rdata.preference})")
-        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
-            self.logger.warning(f"DNS MX lookup failed for {domain}")
-
-        # NS
-        try:
-            answers = self.resolver.resolve(domain, 'NS')
-            for rdata in answers:
-                analysis.name_servers.append(str(rdata))
-        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
-            self.logger.warning(f"DNS NS lookup failed for {domain}")
-
-        # TXT
-        try:
-            answers = self.resolver.resolve(domain, 'TXT')
-            for rdata in answers:
-                analysis.txt_records.append(str(rdata))
-        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
-            self.logger.warning(f"DNS TXT lookup failed for {domain}")
-
-        # DNSSEC
-        analysis.dnssec_enabled = self._check_dnssec(domain)
-
-        # PTR
+        
+        # Run all lookups concurrently
+        import asyncio
+        a_task = self.resolve_a(domain)
+        mx_task = self.resolve_mx(domain)
+        txt_task = self.resolve_txt(domain)
+        ns_task = self.resolve_ns(domain)
+        
+        results = await asyncio.gather(a_task, mx_task, txt_task, ns_task, return_exceptions=True)
+        
+        # Unpack results with error handling
+        analysis.a_records = results[0] if not isinstance(results[0], Exception) else []
+        analysis.mx_records = results[1] if not isinstance(results[1], Exception) else []
+        analysis.txt_records = results[2] if not isinstance(results[2], Exception) else []
+        analysis.name_servers = results[3] if not isinstance(results[3], Exception) else []
+        
+        # PTR lookup for first A record if exists
         if analysis.a_records:
-            ptr_result, error = self.reverse_dns_lookup(analysis.a_records[0])
-            if error:
-                self.logger.warning(f"Reverse DNS lookup failed for {analysis.a_records[0]}: {error}")
-                analysis.ptr_validation = "Failed"
-            else:
-                analysis.ptr_record = ptr_result
-                analysis.reverse_hostname = ptr_result
+            try:
+                # Basic reverse lookup
+                addr = dns.reversename.from_address(analysis.a_records[0])
+                answers = await asyncio.to_thread(self.resolver.resolve, addr, 'PTR')
+                analysis.ptr_record = str(answers[0])
+                analysis.reverse_hostname = analysis.ptr_record
                 analysis.ptr_validation = "Valid (basic check)"
+            except Exception:
+                analysis.ptr_validation = "Failed"
         else:
             analysis.ptr_validation = "No A record to check"
-
+            
         return analysis
 
-    def reverse_dns_lookup(self, ip: str) -> Tuple[str, Optional[str]]:
+    async def resolve_a(self, domain: str) -> list[str]:
         try:
-            addr = dns.reversename.from_address(ip)
-            answers = self.resolver.resolve(addr, 'PTR')
-            return str(answers[0]), None
-        except Exception as e:
-            return "", str(e)
-
-    def _check_dnssec(self, domain: str) -> bool:
-        try:
-            self.resolver.resolve("_dnskey." + domain, 'TXT')
-            return True
+            answers = self.resolver.resolve(domain, 'A')
+            return [str(rdata) for rdata in answers]
         except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
-            return False
+            return []
+
+    async def resolve_mx(self, domain: str) -> list[str]:
+        try:
+            answers = self.resolver.resolve(domain, 'MX')
+            return [f"{rdata.exchange} (prio:{rdata.preference})" for rdata in answers]
+        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
+            return []
+
+    async def resolve_txt(self, domain: str) -> list[str]:
+        try:
+            answers = self.resolver.resolve(domain, 'TXT')
+            return [str(rdata) for rdata in answers]
+        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
+            return []
+
+    async def resolve_ns(self, domain: str) -> list[str]:
+        try:
+            answers = self.resolver.resolve(domain, 'NS')
+            return [str(rdata) for rdata in answers]
+        except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN, dns.resolver.NoNameservers):
+            return []

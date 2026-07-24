@@ -2,7 +2,7 @@ from .base import Detector
 from typing import Any, Dict
 
 class SMSScamDetector(Detector):
-    def detect(self, data: Any) -> Dict[str, Any]:
+    def detect(self, data: Any) -> dict[str, Any]:
         # Analyze SMS content for scam patterns
         score = 0.0
         if isinstance(data, str) and "win a prize" in data.lower():

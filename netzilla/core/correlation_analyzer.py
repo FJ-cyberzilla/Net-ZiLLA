@@ -12,19 +12,19 @@ class CorrelationThresholds:
 
 @dataclass
 class CorrelationAnalysis:
-    related_analyses: List[str] = field(default_factory=list)
-    common_ips: List[str] = field(default_factory=list)
-    common_domains: List[str] = field(default_factory=list)
-    common_patterns: List[str] = field(default_factory=list)
+    related_analyses: list[str] = field(default_factory=list)
+    common_ips: list[str] = field(default_factory=list)
+    common_domains: list[str] = field(default_factory=list)
+    common_patterns: list[str] = field(default_factory=list)
     cluster_score: int = 0
     threat_cluster: bool = False
-    recommendations: List[str] = field(default_factory=list)
+    recommendations: list[str] = field(default_factory=list)
 
 class CorrelationAnalyzer:
     def __init__(self):
         self.thresholds = CorrelationThresholds()
 
-    def analyze_correlations(self, analyses: List[ThreatAnalysis]) -> CorrelationAnalysis:
+    def analyze_correlations(self, analyses: list[ThreatAnalysis]) -> CorrelationAnalysis:
         correlation = CorrelationAnalysis()
 
         if len(analyses) < 2:
@@ -39,8 +39,8 @@ class CorrelationAnalyzer:
 
         return correlation
 
-    def _find_common_ips(self, analyses: List[ThreatAnalysis]) -> List[str]:
-        ip_count: Dict[str, int] = {}
+    def _find_common_ips(self, analyses: list[ThreatAnalysis]) -> list[str]:
+        ip_count: dict[str, int] = {}
         for analysis in analyses:
             if analysis.ip_info:
                 ip_count[analysis.ip_info.ip] = ip_count.get(analysis.ip_info.ip, 0) + 1
@@ -51,8 +51,8 @@ class CorrelationAnalyzer:
         
         return [ip for ip, count in ip_count.items() if count > 1]
 
-    def _find_common_domains(self, analyses: List[ThreatAnalysis]) -> List[str]:
-        domain_count: Dict[str, int] = {}
+    def _find_common_domains(self, analyses: list[ThreatAnalysis]) -> list[str]:
+        domain_count: dict[str, int] = {}
         from urllib.parse import urlparse
 
         def extract_domain(url: str) -> str:
@@ -70,8 +70,8 @@ class CorrelationAnalyzer:
         
         return [domain for domain, count in domain_count.items() if count > 1]
 
-    def _find_common_patterns(self, analyses: List[ThreatAnalysis]) -> List[str]:
-        pattern_count: Dict[str, int] = {}
+    def _find_common_patterns(self, analyses: list[ThreatAnalysis]) -> list[str]:
+        pattern_count: dict[str, int] = {}
         for analysis in analyses:
             for indicator in analysis.phishing_indicators:
                 pattern_count[indicator] = pattern_count.get(indicator, 0) + 1
@@ -103,7 +103,7 @@ class CorrelationAnalyzer:
             return True
         return False
 
-    def _generate_recommendations(self, correlation: CorrelationAnalysis) -> List[str]:
+    def _generate_recommendations(self, correlation: CorrelationAnalysis) -> list[str]:
         recommendations = []
         if correlation.threat_cluster:
             recommendations.extend([

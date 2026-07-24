@@ -6,7 +6,7 @@ from dataclasses import dataclass
 class PatternMatch:
     type: str
     pattern: str
-    matches: List[str]
+    matches: list[str]
     confidence: float
 
 class PatternEngine:
@@ -40,7 +40,7 @@ class PatternEngine:
             re.compile(r'(?i)limited.*time'),
         ]
 
-    def analyze_text(self, text: str) -> List[PatternMatch]:
+    def analyze_text(self, text: str) -> list[PatternMatch]:
         matches = []
         matches.extend(self._check_patterns(text, "phishing", self.phishing_patterns))
         matches.extend(self._check_patterns(text, "malware", self.malware_patterns))
@@ -48,7 +48,7 @@ class PatternEngine:
         matches.extend(self._check_patterns(text, "social_engineering", self.social_engineering_patterns))
         return matches
 
-    def _check_patterns(self, text: str, category: str, patterns: List[re.Pattern]) -> List[PatternMatch]:
+    def _check_patterns(self, text: str, category: str, patterns: list[re.Pattern]) -> list[PatternMatch]:
         matches = []
         for pattern in patterns:
             found = pattern.findall(text)
@@ -62,7 +62,7 @@ class PatternEngine:
                 ))
         return matches
 
-    def _calculate_confidence(self, category: str, matches: List[str]) -> float:
+    def _calculate_confidence(self, category: str, matches: list[str]) -> float:
         base_confidence = {
             "phishing": 0.8,
             "malware": 0.9,
@@ -81,7 +81,7 @@ class PatternEngine:
 
         return min(confidence, 1.0)
 
-    def analyze_url(self, url: str) -> List[PatternMatch]:
+    def analyze_url(self, url: str) -> list[PatternMatch]:
         matches = []
         if url.startswith("data:"):
             matches.append(PatternMatch("malware", "data_uri", [url], 0.8))

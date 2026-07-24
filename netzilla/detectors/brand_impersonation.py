@@ -2,7 +2,7 @@ from .base import Detector
 from typing import Any, Dict
 
 class BrandImpersonationDetector(Detector):
-    def detect(self, data: Any) -> Dict[str, Any]:
+    def detect(self, data: Any) -> dict[str, Any]:
         # Perform brand impersonation detection
         score = 0.0
         if isinstance(data, str) and "bank-of-america" in data.lower():

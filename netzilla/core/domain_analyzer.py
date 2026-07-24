@@ -10,14 +10,14 @@ class DomainAnalyzer:
         self.dns_client = dns_client
         self.whois_client = whois_client
 
-    def analyze(self, parsed_url: urlparse, analysis: ThreatAnalysis) -> int:
+    async def analyze(self, parsed_url: urlparse, analysis: ThreatAnalysis) -> int:
         analysis.domain = parsed_url.hostname or ""
         score = 0
 
         # WHOIS check
         if analysis.whois_info is None:
             try:
-                whois_info = self.whois_client.lookup(parsed_url.hostname or "")
+                whois_info = await self.whois_client.lookup(parsed_url.hostname or "")
                 analysis.whois_info = whois_info
                 if whois_info.domain_age in ["Unknown", "Less than 30 days"]:
                     score += 10
@@ -29,7 +29,7 @@ class DomainAnalyzer:
         # DNS check
         if analysis.dns_info is None:
             try:
-                dns_info = self.dns_client.lookup(parsed_url.hostname or "")
+                dns_info = await self.dns_client.lookup(parsed_url.hostname or "")
                 analysis.dns_info = dns_info
                 if not dns_info.txt_records:
                     score += 2
