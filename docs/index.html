@@ -1,0 +1,276 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Net-ZiLLA :: Advanced Threat Intelligence Platform</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #050f05;
+            color: #00ff66;
+            font-family: monospace;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        /* CRT Scanline Effect */
+        body::after {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            z-index: 99999;
+            background-size: 100% 3px;
+            pointer-events: none;
+        }
+        .crt-glow {
+            text-shadow: 0 0 6px rgba(0, 255, 102, 0.7);
+        }
+        .crt-glow-orange {
+            text-shadow: 0 0 6px rgba(255, 165, 0, 0.7);
+        }
+        .pixel-box {
+            border: 4px solid #00ff66;
+            box-shadow: 4px 4px 0px #003311;
+            background: rgba(0, 10, 2, 0.95);
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .pixel-box-orange {
+            border: 4px solid #ffa500;
+            box-shadow: 4px 4px 0px #4d3300;
+            background: rgba(10, 7, 0, 0.95);
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .pixel-btn {
+            border: 3px solid #00ff66;
+            box-shadow: 3px 3px 0px #003311;
+            background: #000;
+            color: #00ff66;
+            padding: 10px 15px;
+            font-family: monospace;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            text-transform: uppercase;
+            transition: 0.1s;
+        }
+        .pixel-btn:hover {
+            background-color: #00ff66;
+            color: #050f05;
+            box-shadow: 1px 1px 0px #003311;
+            transform: translate(2px, 2px);
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .header-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border: 1px solid;
+        }
+        .badge-green { color: #00ff66; border-color: #00ff66; background: #002200; }
+        .badge-orange { color: #ffa500; border-color: #ffa500; background: #221100; }
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed #003311;
+            font-size: 13px;
+        }
+        .flow-step {
+            background: #000;
+            border: 2px solid #00ff66;
+            padding: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .flow-step::after {
+            content: "▼";
+            display: block;
+            color: #00ff66;
+            font-size: 10px;
+            margin-top: 8px;
+        }
+        .flow-step:last-child::after {
+            content: "";
+        }
+        .tech-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .tech-box {
+            background: #000;
+            border: 1px solid #ffa500;
+            padding: 8px;
+            font-size: 12px;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #ffa500;
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px dashed #ffa500;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="pixel-box">
+        <div style="position: absolute; top: 5px; left: 10px; font-size: 9px; color: #ffa500;">FJ™ Cybertronic Systems®</div>
+        <div style="position: absolute; top: 5px; right: 10px; font-size: 9px; color: #00ff66;">SYS_VER: 2.0.4-CRT</div>
+        
+        <div class="header-container" style="margin-top: 15px;">
+            <div style="background: #000; border: 2px solid #00ff66; padding: 10px; font-size: 11px; line-height: 1.1; color: #00ff66;" class="crt-glow">
+<pre>
+ 🦖 [NET-ZILLA]
+ /__\  CORE v1.0
+(o.o)  SEC_ONLINE
+ /--\
+</pre>
+            </div>
+            <div style="flex-grow: 1; text-align: center;">
+                <h1 class="crt-glow" style="font-size: 22px; margin-bottom: 5px; letter-spacing: 2px;">NET-ZiLLA</h1>
+                <p class="crt-glow-orange" style="color: #ffa500; font-size: 12px; letter-spacing: 1px;">Advanced Threat Intelligence & Detection Command Center</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- GRID LAYOUT -->
+    <div class="grid-3">
+        
+        <!-- COLUMN 1 -->
+        <div>
+            <div class="pixel-box">
+                <h3 class="crt-glow-orange" style="font-size: 13px; margin-bottom: 12px; border-bottom: 1px solid #ffa500; padding-bottom: 5px;">:: 01. DETECTOR SUITE</h3>
+                <div class="list-item"><span>[x] Phishing Analyzer</span><span class="badge badge-green">ACTIVE</span></div>
+                <div class="list-item"><span>[x] Malware Signatures</span><span class="badge badge-green">ACTIVE</span></div>
+                <div class="list-item"><span>[x] Brand Impersonation</span><span class="badge badge-orange">HEURISTIC</span></div>
+                <div class="list-item"><span>[x] SMS Scam Vector</span><span class="badge badge-green">ACTIVE</span></div>
+                <div class="list-item" style="border: none;"><span>[x] URL Shortener Resolver</span><span class="badge badge-green">ACTIVE</span></div>
+            </div>
+
+            <div class="pixel-box-orange">
+                <h3 class="crt-glow-orange" style="font-size: 13px; margin-bottom: 12px; border-bottom: 1px solid #ffa500; padding-bottom: 5px;">:: 02. TECH SPECIFICATIONS</h3>
+                <div class="tech-grid">
+                    <div class="tech-box"><strong style="color: #ffa500;">ENGINE:</strong><br>Python 3.14+</div>
+                    <div class="tech-box"><strong style="color: #ffa500;">CLI UI:</strong><br>Rich Terminal</div>
+                    <div class="tech-box"><strong style="color: #ffa500;">BACKEND:</strong><br>FastAPI / Uvicorn</div>
+                    <div class="tech-box"><strong style="color: #ffa500;">DEPLOY:</strong><br>Dockerized</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMN 2 -->
+        <div>
+            <div class="pixel-box" style="display: flex; flex-direction: column; justify-content: space-between; height: calc(100% - 35px);">
+                <div>
+                    <h3 class="crt-glow" style="font-size: 13px; margin-bottom: 12px; border-bottom: 1px solid #00ff66; padding-bottom: 5px;">:: 03. THREAT PIPELINE FLOW</h3>
+                    
+                    <div class="flow-step">
+                        <strong style="color: #ffa500; font-size: 12px;">[STEP 1] INGESTION</strong>
+                        <div style="font-size: 11px; color: #aaffaa; margin-top: 4px;">Target URL / Domain / SMS / Batch Queue</div>
+                    </div>
+                    <div class="flow-step">
+                        <strong style="color: #ffa500; font-size: 12px;">[STEP 2] PARSING & PATTERNS</strong>
+                        <div style="font-size: 11px; color: #aaffaa; margin-top: 4px;">Regex matching, shortener unrolling</div>
+                    </div>
+                    <div class="flow-step">
+                        <strong style="color: #ffa500; font-size: 12px;">[STEP 3] CORRELATION & ENRICHMENT</strong>
+                        <div style="font-size: 11px; color: #aaffaa; margin-top: 4px;">DNS lookup, feeds, heuristic comparison</div>
+                    </div>
+                    <div style="background: #220000; border: 2px solid #ff3333; padding: 10px; text-align: center;">
+                        <strong style="color: #ff6666; font-size: 12px;">[STEP 4] VERDICT & REPORT</strong>
+                        <div style="font-size: 11px; color: #ffaaaa; margin-top: 4px;">Risk Score Calculation :: CLI / API Action</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; border-top: 1px solid #003311; padding-top: 15px;">
+                    <button class="pixel-btn" onclick="simulateScan()">[▶ RUN LIVE SIMULATION SCAN]</button>
+                    <div id="sim-output" style="font-size: 11px; color: #ffa500; margin-top: 8px; text-align: center; height: 18px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMN 3 -->
+        <div>
+            <div class="pixel-box">
+                <h3 class="crt-glow-orange" style="font-size: 13px; margin-bottom: 12px; border-bottom: 1px solid #ffa500; padding-bottom: 5px;">:: 04. CORE CAPABILITIES</h3>
+                <div style="font-size: 12px; line-height: 1.4; space-y: 10px;">
+                    <div style="background: #000; border: 1px solid #004411; padding: 8px; margin-bottom: 8px;">
+                        <strong style="color: #00ff66;">&gt; VINTAGE MS-DOS CLI</strong><br>Interactive terminal with real-time progress bars, ETAs, and color-coded alerts.
+                    </div>
+                    <div style="background: #000; border: 1px solid #004411; padding: 8px; margin-bottom: 8px;">
+                        <strong style="color: #00ff66;">&gt; MODULAR DETECTORS</strong><br>Plug-and-play architecture for custom security rules and threat signatures.
+                    </div>
+                    <div style="background: #000; border: 1px solid #004411; padding: 8px;">
+                        <strong style="color: #00ff66;">&gt; DUAL DEPLOYMENT</strong><br>Run standalone via CLI or scale up using FastAPI server endpoints.
+                    </div>
+                </div>
+            </div>
+
+            <div class="pixel-box">
+                <h3 class="crt-glow" style="font-size: 13px; margin-bottom: 12px; border-bottom: 1px solid #00ff66; padding-bottom: 5px;">:: 05. SYSTEM STATUS</h3>
+                <div style="font-size: 12px;" class="list-item"><span>CORE DAEMON:</span><span style="color: #00ff66;">ONLINE [OK]</span></div>
+                <div style="font-size: 12px;" class="list-item"><span>DETECTION ENGINE:</span><span style="color: #00ff66;">LOADED (5 MODULES)</span></div>
+                <div style="font-size: 12px;" class="list-item" style="border: none;"><span>THREAT FEED SYNC:</span><span style="color: #ffa500;">ACTIVE (14ms)</span></div>
+                
+                <div style="background: #000; border: 1px solid #00ff66; height: 16px; margin-top: 12px; position: relative; overflow: hidden;">
+                    <div id="progress-bar" style="background: #00ff66; height: 100%; width: 100%; transition: width 0.4s;"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer pixel-box-orange">
+        FJ™ Cybertronic Systems® &copy; 2026 Net-ZiLLA Intelligence Platform. All Rights Reserved. // CRT MODE SECURE
+    </footer>
+
+    <script>
+        function simulateScan() {
+            const output = document.getElementById('sim-output');
+            const bar = document.getElementById('progress-bar');
+            output.innerText = "INITIALIZING PIPELINE SCAN...";
+            bar.style.width = "25%";
+            
+            setTimeout(() => {
+                output.innerText = "PARSING URL & RUNNING DETECTORS...";
+                bar.style.width = "65%";
+            }, 600);
+
+            setTimeout(() => {
+                output.innerText = "VERDICT: MEDIUM RISK (BRAND SPOOF DETECTED)";
+                bar.style.width = "100%";
+            }, 1300);
+        }
+    </script>
+</body>
+</html>
+
+```
+          
