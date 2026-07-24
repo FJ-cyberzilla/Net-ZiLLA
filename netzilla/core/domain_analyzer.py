@@ -1,40 +1,64 @@
-from urllib.parse import urlparse
-from netzilla.models.threats import ThreatAnalysis
+"""Domain analysis module for identifying domain-related threats."""
+# pylint: disable=too-few-public-methods
+from typing import Any, TypedDict
+
+import structlog
+
 from netzilla.network.dns_client import DNSClient
 from netzilla.network.whois_client import WhoisClient
-from netzilla.utils.logger import Logger # Assuming this exists or should exist
+
+logger = structlog.get_logger(__name__)
+
+
+class DomainFindings(TypedDict):
+    threats: list[str]
+    warnings: list[str]
+    score_bonus: int
+
 
 class DomainAnalyzer:
-    def __init__(self, logger: Logger, dns_client: DNSClient, whois_client: WhoisClient):
-        self.logger = logger
+    """Analyzes domains for potential threats."""
+
+    def __init__(self, dns_client: DNSClient, whois_client: WhoisClient):
+        """Initializes the DomainAnalyzer."""
         self.dns_client = dns_client
         self.whois_client = whois_client
 
-    async def analyze(self, parsed_url: urlparse, analysis: ThreatAnalysis) -> int:
-        analysis.domain = parsed_url.hostname or ""
-        score = 0
+    async def analyze(self, domain: str) -> DomainFindings:
+        """Analyzes a domain for threats.
+
+        Args:
+            domain: The domain to analyze.
+
+        Returns:
+            A dictionary containing threat information.
+        """
+        findings: DomainFindings = {"threats": [], "warnings": [], "score_bonus": 0}
 
         # WHOIS check
-        if analysis.whois_info is None:
-            try:
-                whois_info = await self.whois_client.lookup(parsed_url.hostname or "")
-                analysis.whois_info = whois_info
-                if whois_info.domain_age in ["Unknown", "Less than 30 days"]:
-                    score += 10
-                    analysis.warnings.append("Domain is very new, potential risk")
-            except Exception as e:
-                self.logger.warn(f"Failed to perform WHOIS lookup: {e}")
-                score += 5
+        try:
+            whois_info = await self.whois_client.lookup(domain)
+            if whois_info.days_old is not None and whois_info.days_old < 30:
+                findings["score_bonus"] += 10
+                findings["threats"].append("Domain is very new (less than 30 days)")
+            if whois_info.is_newly_registered:
+                findings["warnings"].append("Domain was recently registered")
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            logger.warning(
+                "Failed to perform WHOIS lookup", domain=domain, error=str(e)
+            )
 
         # DNS check
-        if analysis.dns_info is None:
-            try:
-                dns_info = await self.dns_client.lookup(parsed_url.hostname or "")
-                analysis.dns_info = dns_info
-                if not dns_info.txt_records:
-                    score += 2
-            except Exception as e:
-                self.logger.warn(f"Failed to perform DNS lookup: {e}")
-                score += 3
-        
-        return score
+        try:
+            # Note: Using DNSClient resolve methods if available
+            if hasattr(self.dns_client, "resolve_txt"):
+                txt_records = await self.dns_client.resolve_txt(domain)
+                if not txt_records:
+                    findings["score_bonus"] += 2
+                    findings["warnings"].append("No TXT records found")
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            logger.warning("Failed to perform DNS lookup", domain=domain, error=str(e))
+
+        return findings

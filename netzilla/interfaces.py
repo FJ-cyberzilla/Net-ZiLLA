@@ -3,9 +3,10 @@ All protocols (interfaces) for NetZilla.
 No implementations - just contracts and data models.
 """
 
-from typing import Protocol, runtime_checkable
 from datetime import datetime
 from enum import Enum
+from typing import Protocol, runtime_checkable, Any
+
 from pydantic import BaseModel, Field
 
 # ──────────────────────────────────────────────
@@ -14,6 +15,7 @@ from pydantic import BaseModel, Field
 
 
 class RiskLevel(str, Enum):
+    """Represents the severity level of detected threats."""
     SAFE = "SAFE"
     LOW = "LOW"
     MEDIUM = "MEDIUM"
@@ -112,7 +114,7 @@ class ContentAnalysis(BaseModel):
 
 
 class AnalysisResult(BaseModel):
-    """Final output from the analyzer."""
+    """Final output from the analyzer aggregating all analysis data."""
 
     url: str
     normalized_url: str
@@ -143,11 +145,9 @@ class URLDetector(Protocol):
 
     def analyze(self, url: str) -> URLFeatures:
         """Extract all features from a URL."""
-        ...
 
     def score(self, features: URLFeatures) -> float:
         """Convert features to a risk score (0-100)."""
-        ...
 
 
 @runtime_checkable
@@ -161,11 +161,11 @@ class PhishingDetector(Protocol):
         redirects: list[RedirectHop] | None = None,
     ) -> float:
         """Return phishing probability score (0-100)."""
-        ...
+        raise NotImplementedError()
 
     def get_indicators(self, url: str) -> list[str]:
         """Return list of phishing indicators found."""
-        ...
+        raise NotImplementedError()
 
 
 @runtime_checkable
@@ -174,15 +174,15 @@ class SMSDetector(Protocol):
 
     def analyze(self, message: str) -> float:
         """Return scam probability score (0-100)."""
-        ...
+        raise NotImplementedError()
 
     def extract_urls(self, message: str) -> list[str]:
         """Extract URLs from SMS text."""
-        ...
+        raise NotImplementedError()
 
     def classify_tactic(self, message: str) -> str:
         """Classify the scam tactic used."""
-        ...
+        raise NotImplementedError()
 
 
 @runtime_checkable
@@ -191,11 +191,11 @@ class MalwareDetector(Protocol):
 
     def analyze_url(self, url: str) -> float:
         """Check URL for malware patterns."""
-        ...
+        raise NotImplementedError()
 
     def analyze_file(self, file_path: str) -> float:
         """Scan file for malware signatures."""
-        ...
+        raise NotImplementedError()
 
 
 @runtime_checkable
@@ -204,11 +204,11 @@ class BrandImpersonationDetector(Protocol):
 
     def analyze(self, url: str, content: str | None = None) -> list[str]:
         """Return list of impersonated brands detected."""
-        ...
+        raise NotImplementedError()
 
     def similarity_score(self, url: str, brand: str) -> float:
         """Calculate visual similarity to a brand domain."""
-        ...
+        raise NotImplementedError()
 
 
 # ──────────────────────────────────────────────
@@ -222,19 +222,19 @@ class DNSClient(Protocol):
 
     async def resolve_a(self, domain: str) -> list[str]:
         """Resolve A records."""
-        ...
+        raise NotImplementedError()
 
     async def resolve_mx(self, domain: str) -> list[str]:
         """Resolve MX records."""
-        ...
+        raise NotImplementedError()
 
     async def resolve_txt(self, domain: str) -> list[str]:
         """Resolve TXT records."""
-        ...
+        raise NotImplementedError()
 
     async def resolve_ns(self, domain: str) -> list[str]:
         """Resolve NS records."""
-        ...
+        raise NotImplementedError()
 
 
 @runtime_checkable
@@ -243,7 +243,7 @@ class WHOISClient(Protocol):
 
     async def lookup(self, domain: str) -> DomainInfo:
         """Get domain registration information."""
-        ...
+        raise NotImplementedError()
 
 
 @runtime_checkable
@@ -252,7 +252,7 @@ class SSLClient(Protocol):
 
     async def verify(self, hostname: str, port: int = 443) -> CertificateInfo:
         """Verify SSL certificate and return details."""
-        ...
+        raise NotImplementedError()
 
 
 @runtime_checkable
@@ -261,7 +261,7 @@ class IPReputationClient(Protocol):
 
     async def check(self, ip: str) -> IPInfo:
         """Get IP reputation data."""
-        ...
+        raise NotImplementedError()
 
 
 @runtime_checkable
@@ -272,11 +272,11 @@ class HTTPClient(Protocol):
         self, url: str, follow_redirects: bool = True
     ) -> tuple[str, list[RedirectHop]]:
         """Fetch URL content and return (body, redirect_chain)."""
-        ...
+        raise NotImplementedError()
 
     async def head(self, url: str) -> dict[str, str]:
         """Get HTTP headers only."""
-        ...
+        raise NotImplementedError()
 
 
 # ──────────────────────────────────────────────
@@ -290,12 +290,12 @@ class Reporter(Protocol):
 
     def generate(self, result: AnalysisResult) -> str:
         """Generate a report string."""
-        ...
+        raise NotImplementedError()
 
     def to_json(self, result: AnalysisResult) -> str:
         """Export as JSON."""
-        ...
+        raise NotImplementedError()
 
-    def to_dict(self, result: AnalysisResult) -> dict:
+    def to_dict(self, result: AnalysisResult) -> dict[str, Any]:
         """Export as dictionary."""
-        ...
+        raise NotImplementedError()

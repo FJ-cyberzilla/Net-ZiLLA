@@ -2,6 +2,7 @@
 URL Shortener detector implementation.
 Adheres to URLDetector protocol.
 """
+
 import math
 import re
 from urllib.parse import urlparse
@@ -14,15 +15,32 @@ logger = structlog.get_logger(__name__)
 
 # Common URL shortener domains
 SHORTENER_DOMAINS = {
-    "bit.ly", "t.co", "goo.gl", "tinyurl.com", "ow.ly", 
-    "is.gd", "buff.ly", "adf.ly", "v.gd", "j.mp"
+    "bit.ly",
+    "t.co",
+    "goo.gl",
+    "tinyurl.com",
+    "ow.ly",
+    "is.gd",
+    "buff.ly",
+    "adf.ly",
+    "v.gd",
+    "j.mp",
 }
 
 # Suspicious keywords for phishing/malware
 SUSPICIOUS_KEYWORDS = [
-    "login", "signin", "secure", "verify", "update", 
-    "account", "bank", "free", "winner", "prize"
+    "login",
+    "signin",
+    "secure",
+    "verify",
+    "update",
+    "account",
+    "bank",
+    "free",
+    "winner",
+    "prize",
 ]
+
 
 class URLShortenerDetector:
     """Detects and analyzes shortened URLs."""
@@ -33,12 +51,12 @@ class URLShortenerDetector:
         parsed = urlparse(url)
         domain = parsed.hostname or ""
         path = parsed.path
-        
+
         # Calculate features
         length = len(url)
         has_ip = self._is_ip_address(domain)
         tld = self._get_tld(domain)
-        
+
         features = URLFeatures(
             url=url,
             length=length,
@@ -52,18 +70,18 @@ class URLShortenerDetector:
             subdomain_count=len(domain.split(".")) - 2 if "." in domain else 0,
             path_depth=len(path.strip("/").split("/")),
             has_redirect_param=any(q in url for q in ["redirect=", "url=", "next="]),
-            suspicious_keywords=[kw for kw in SUSPICIOUS_KEYWORDS if kw in url.lower()]
+            suspicious_keywords=[kw for kw in SUSPICIOUS_KEYWORDS if kw in url.lower()],
         )
         return features
 
     def score(self, features: URLFeatures) -> float:
         """Convert features to a risk score (0-100)."""
         score = 0.0
-        
+
         # Shortener domains get a baseline risk
         if any(domain in features.url for domain in SHORTENER_DOMAINS):
             score += 40.0
-            
+
         # Add risk based on other features
         if features.has_ip:
             score += 30.0
@@ -71,7 +89,7 @@ class URLShortenerDetector:
             score += 20.0
         if features.has_redirect_param:
             score += 20.0
-            
+
         return min(score, 100.0)
 
     def _is_ip_address(self, domain: str) -> bool:

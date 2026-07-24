@@ -6,30 +6,23 @@ Fully testable via dependency injection.
 import asyncio
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any, Optional, cast, Awaitable
 from urllib.parse import urlparse
 
 import structlog
 from tldextract import extract
 
-from netzilla.interfaces import (
-    URLDetector,
-    PhishingDetector,
-    MalwareDetector,
-    BrandImpersonationDetector,
-    DNSClient,
-    WHOISClient,
-    SSLClient,
-    IPReputationClient,
-    HTTPClient,
-    Reporter,
-    AnalysisResult,
-    RiskLevel,
-    CertificateInfo,
-    DomainInfo,
-)
 from netzilla.core.content_analyzer import ContentAnalyzer
+from netzilla.core.data_enricher import DataEnricher
+from netzilla.core.domain_analyzer import DomainAnalyzer
+from netzilla.interfaces import (AnalysisResult, BrandImpersonationDetector,
+                                 CertificateInfo, DNSClient, DomainInfo,
+                                 HTTPClient, IPReputationClient, IPInfo,
+                                 MalwareDetector, PhishingDetector, Reporter,
+                                 RiskLevel, SSLClient, URLDetector,
+                                 WHOISClient, RedirectHop, ContentAnalysis,
+                                 URLFeatures)
 
 logger = structlog.get_logger(__name__)
 
@@ -55,6 +48,7 @@ class DNSResolutionError(NetzillaError):
 @dataclass
 class NetworkClients:
     """Optional network‑level clients."""
+
     dns: DNSClient | None = None
     whois: WHOISClient | None = None
     ssl: SSLClient | None = None
@@ -64,9 +58,12 @@ class NetworkClients:
 @dataclass
 class Services:
     """All optional services."""
+
     malware_detector: MalwareDetector | None = None
     brand_detector: BrandImpersonationDetector | None = None
     content_analyzer: ContentAnalyzer | None = None
+    domain_analyzer: DomainAnalyzer | None = None
+    data_enricher: DataEnricher | None = None
     http_client: HTTPClient | None = None
     reporter: Reporter | None = None
     network: NetworkClients = field(default_factory=NetworkClients)
@@ -78,6 +75,7 @@ class Services:
 @dataclass
 class RiskAssessment:
     """Aggregated risk scores and classification."""
+
     url_score: float = 0.0
     phishing_score: float = 0.0
     malware_score: float = 0.0
@@ -88,6 +86,7 @@ class RiskAssessment:
 @dataclass
 class ThreatContext:
     """Collected threats and recommendations."""
+
     threats: list[str] = field(default_factory=list)
     recommendations: list[str] = field(default_factory=list)
     impersonated_brands: list[str] = field(default_factory=list)
@@ -96,22 +95,25 @@ class ThreatContext:
 @dataclass
 class NetworkContext:
     """Results of network checks."""
+
     cert_info: Optional[CertificateInfo] = None
     domain_info: Optional[DomainInfo] = None
-    ip_info: Any = None
+    ip_info: IPInfo | None = None
 
 
 @dataclass
 class PageContext:
     """Fetched page content and analysis."""
+
     content: str | None = None
-    redirects: list[Any] = field(default_factory=list)
-    content_analysis: Any = None
+    redirects: list[RedirectHop] = field(default_factory=list)
+    content_analysis: ContentAnalysis | None = None
 
 
 @dataclass
 class AnalysisContext:
     """Holds all intermediate data collected during analysis."""
+
     url: str
     risk: RiskAssessment = field(default_factory=RiskAssessment)
     threats: ThreatContext = field(default_factory=ThreatContext)
@@ -146,8 +148,12 @@ class AnalysisContext:
 class Analyzer:
     """Main analysis orchestrator with injected dependencies."""
 
-    def __init__(self, url_detector: URLDetector, phishing_detector: PhishingDetector,
-                 services: Services | None = None) -> None:
+    def __init__(
+        self,
+        url_detector: URLDetector,
+        phishing_detector: PhishingDetector,
+        services: Services | None = None,
+    ) -> None:
         self._url = url_detector
         self._phishing = phishing_detector
         self._services = services or Services()
@@ -162,8 +168,12 @@ class Analyzer:
         await self._run_all_phases(url, ctx)
 
         elapsed = (time.monotonic() - start_time) * 1000
-        logger.info("Analysis completed", score=ctx.risk.url_score,
-                    risk=ctx.risk.risk_level, elapsed=elapsed)
+        logger.info(
+            "Analysis completed",
+            score=ctx.risk.url_score,
+            risk=ctx.risk.risk_level,
+            elapsed=elapsed,
+        )
         return ctx.to_result(self._url.analyze(url), elapsed)
 
     async def shutdown(self) -> None:
@@ -180,6 +190,13 @@ class Analyzer:
         self._collect_url_threats(features, ctx)
 
         domain = self._extract_domain(url)
+
+        # Domain analysis phase
+        if self._services.domain_analyzer:
+            domain_findings = await self._services.domain_analyzer.analyze(domain)
+            ctx.threats.threats.extend(domain_findings.get("threats", []))
+            ctx.risk.url_score += domain_findings.get("score_bonus", 0)
+
         net_results = await self._perform_network_checks(domain, url)
         ctx.network.cert_info = self._safe_certificate(net_results.get("ssl"))
         ctx.network.domain_info = self._safe_domain_info(net_results.get("whois"))
@@ -189,6 +206,10 @@ class Analyzer:
         ctx.network.ip_info = await self._check_ip_reputation(net_results.get("dns"))
         ctx.page.content_analysis = await self._analyze_content(ctx.page.content, url)
 
+        # Data enrichment phase
+        if self._services.data_enricher:
+            await self._services.data_enricher.enrich_context(ctx)
+
         self._finalize_risk(ctx)
         self._build_recommendations(ctx)
 
@@ -196,7 +217,7 @@ class Analyzer:
     # Helpers
     # ------------------------------------------------------------------
     @staticmethod
-    def _collect_url_threats(features, ctx: AnalysisContext) -> None:
+    def _collect_url_threats(features: URLFeatures, ctx: AnalysisContext) -> None:
         if features.has_ip:
             ctx.threats.threats.append("URL uses raw IP address instead of domain")
         if features.tld_risk > 0.7:
@@ -210,8 +231,8 @@ class Analyzer:
                 f"Suspicious keywords: {', '.join(features.suspicious_keywords)}"
             )
 
-    async def _perform_network_checks(self, domain: str, url: str) -> dict:
-        tasks = {}
+    async def _perform_network_checks(self, domain: str, url: str) -> dict[str, Any]:
+        tasks: dict[str, Awaitable[Any]] = {}
         net = self._services.network
         if net.ssl and url.startswith("https"):
             tasks["ssl"] = net.ssl.verify(domain)
@@ -230,14 +251,14 @@ class Analyzer:
         if isinstance(result, Exception):
             logger.error("SSL check failed", error=str(result))
             return None
-        return result
+        return cast(CertificateInfo, result)
 
     @staticmethod
     def _safe_domain_info(result: Any) -> Optional[DomainInfo]:
         if isinstance(result, Exception):
             logger.error("WHOIS check failed", error=str(result))
             return None
-        return result
+        return cast(DomainInfo, result)
 
     async def _fetch_page(self, url: str) -> tuple[str | None, list[Any]]:
         http = self._services.http_client
@@ -250,8 +271,9 @@ class Analyzer:
             return None, []
 
     async def _run_threat_detection(self, url: str, ctx: AnalysisContext) -> None:
-        phishing_score = self._phishing.analyze(url, ctx.page.content,
-                                                redirects=ctx.page.redirects)
+        phishing_score = self._phishing.analyze(
+            url, ctx.page.content, redirects=ctx.page.redirects
+        )
         ctx.risk.phishing_score = phishing_score
         ctx.threats.threats.extend(self._phishing.get_indicators(url))
 
@@ -298,8 +320,12 @@ class Analyzer:
 
     @staticmethod
     def _compute_threat_bonus(threats: list[str]) -> float:
-        weights = {"malware": 15, "phishing": 10,
-                   "brand_impersonation": 8, "certificate": 10}
+        weights = {
+            "malware": 15,
+            "phishing": 10,
+            "brand_impersonation": 8,
+            "certificate": 10,
+        }
         bonus = 0.0
         for t in threats:
             lower = t.lower()
@@ -353,4 +379,4 @@ class Analyzer:
         parsed = urlparse(url)
         hostname = parsed.hostname or ""
         extracted = extract(hostname)
-        return extracted.registered_domain or hostname
+        return extracted.top_domain_under_public_suffix or hostname

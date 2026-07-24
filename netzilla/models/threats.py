@@ -1,17 +1,22 @@
+"""Threat models for analysis."""
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import StrEnum
-from typing import List, Dict, Optional, Any
+from typing import Any
+
 
 class ThreatLevel(StrEnum):
+    """Enumeration of possible threat levels for analyzed entities."""
     SAFE = "🟢 SAFE"
     LOW = "🟡 LOW"
     MEDIUM = "🟠 MEDIUM"
     HIGH = "🔴 HIGH"
     CRITICAL = "💀 CRITICAL"
 
+
 @dataclass
 class CookieInfo:
+    """Represents a browser cookie."""
     name: str
     value: str
     domain: str
@@ -21,8 +26,10 @@ class CookieInfo:
     http_only: bool
     same_site: str
 
+
 @dataclass
 class RedirectDetail:
+    """Represents a single step in an HTTP redirect chain."""
     url: str
     status_code: int
     location: str
@@ -33,8 +40,10 @@ class RedirectDetail:
     hop_number: int
     warnings: list[str] = field(default_factory=list)
 
+
 @dataclass
 class DNSAnalysis:
+    """Represents DNS lookup results for a domain."""
     a_records: list[str] = field(default_factory=list)
     aaaa_records: list[str] = field(default_factory=list)
     mx_records: list[str] = field(default_factory=list)
@@ -49,8 +58,10 @@ class DNSAnalysis:
     ttl_summary: str | None = None
     warnings: list[str] = field(default_factory=list)
 
+
 @dataclass
 class WhoisAnalysis:
+    """Represents domain WHOIS information."""
     domain: str
     registrar: str
     created_date: str
@@ -63,8 +74,10 @@ class WhoisAnalysis:
     raw_whois: str | None = None
     warnings: list[str] = field(default_factory=list)
 
+
 @dataclass
 class TLSAnalysis:
+    """Represents TLS/SSL certificate analysis."""
     certificate_valid: bool
     expires_in: timedelta
     issuer: str
@@ -79,8 +92,10 @@ class TLSAnalysis:
     compression_enabled: str | None = None
     server_type: str | None = None
 
+
 @dataclass
 class GeoAnalysis:
+    """Represents geographical IP analysis."""
     ip: str
     country: str
     isp: str
@@ -98,16 +113,20 @@ class GeoAnalysis:
     abuse_history: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
+
 @dataclass
 class HopDetail:
+    """Represents a single hop in a network trace."""
     number: int
     ip: str
     latency: timedelta
     host: str | None = None
     country: str | None = None
 
+
 @dataclass
 class NetworkAnalysis:
+    """Represents overall network connectivity analysis."""
     target: str
     hop_count: int
     hops: list[HopDetail]
@@ -118,8 +137,10 @@ class NetworkAnalysis:
     geo_path: str | None = None
     warnings: list[str] = field(default_factory=list)
 
+
 @dataclass
 class ThreatAnalysis:
+    """Aggregates all threat analysis results for a target URL."""
     analysis_id: str
     url: str
     threat_level: ThreatLevel

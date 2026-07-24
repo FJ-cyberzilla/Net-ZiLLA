@@ -1,5 +1,10 @@
+"""
+Module for detecting brand impersonation threats.
+"""
+from typing import Any
+
 from .base import Detector
-from typing import Any, Dict
+
 
 class BrandImpersonationDetector(Detector):
     def detect(self, data: Any) -> dict[str, Any]:
@@ -7,4 +12,8 @@ class BrandImpersonationDetector(Detector):
         score = 0.0
         if isinstance(data, str) and "bank-of-america" in data.lower():
             score = 95.0
-        return {"detected": score > 50.0, "score": score, "details": "Analysis complete"}
+        return {
+            "detected": score > 50.0,
+            "score": score,
+            "details": "Analysis complete",
+        }

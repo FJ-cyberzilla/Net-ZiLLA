@@ -6,18 +6,14 @@ Amber/Green dual‑phosphor aesthetic, no animation.
 import sys
 import time
 from datetime import datetime
+
 import typer
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import (
-    Progress,
-    SpinnerColumn,
-    TextColumn,
-    BarColumn,
-    TimeRemainingColumn,
-)
-from rich.table import Table
+from rich.progress import (BarColumn, Progress, SpinnerColumn, TextColumn,
+                           TimeRemainingColumn)
 from rich.prompt import Prompt
+from rich.table import Table
 from rich.text import Text
 
 app = typer.Typer(help="Net-ZiLLA Threat Intelligence Command Center")
@@ -26,12 +22,12 @@ console = Console()
 # ---------------------------------------------------------------------------
 # Vintage dual‑phosphor palette
 # ---------------------------------------------------------------------------
-AMBER       = "#FF8C00"
-AMBER_DIM   = "#B85C00"
-GREEN       = "#00FF66"
-GREEN_DIM   = "#003311"
-WARNING     = "#FFFF00"
-DANGER      = "#FF3333"
+AMBER = "#FF8C00"
+AMBER_DIM = "#B85C00"
+GREEN = "#00FF66"
+GREEN_DIM = "#003311"
+WARNING = "#FFFF00"
+DANGER = "#FF3333"
 
 HEADER = """
 █▄░█ █▀▀ ▀█▀ █▀▀ █░█ █ █░░ █░░ █▀▀
@@ -42,7 +38,10 @@ HEADER = """
 MSG = {
     "menu_title": "MAIN CONTROL MENU",
     "menu_items": {
-        "1": ("ANALYZE URL", "Deep scan for phishing, shorteners & malicious signatures"),
+        "1": (
+            "ANALYZE URL",
+            "Deep scan for phishing, shorteners & malicious signatures",
+        ),
         "2": ("DOMAIN RECON", "DNS query, correlation & brand impersonation check"),
         "3": ("BATCH SCAN", "Run pipeline across bulk target files with progress"),
         "4": ("API SERVER", "Spin up Net-ZiLLA FastAPI backend interface"),
@@ -138,11 +137,13 @@ def run_simulated_pipeline(tasks: list[dict]) -> None:
     ) as progress:
         progress_tasks = []
         for tdef in tasks:
-            progress_tasks.append({
-                "id": progress.add_task(tdef["name"], total=100),
-                "steps": tdef["steps"],
-                "increment": 100 / tdef["steps"],
-            })
+            progress_tasks.append(
+                {
+                    "id": progress.add_task(tdef["name"], total=100),
+                    "steps": tdef["steps"],
+                    "increment": 100 / tdef["steps"],
+                }
+            )
 
         all_complete = False
         while not all_complete:
@@ -152,7 +153,7 @@ def run_simulated_pipeline(tasks: list[dict]) -> None:
                 if not progress.tasks[task_id].completed:
                     all_complete = False
                     progress.update(task_id, advance=pt["increment"])
-            time.sleep(0.1)   # small fixed delay for visual smoothness
+            time.sleep(0.1)  # small fixed delay for visual smoothness
 
 
 def build_result_table() -> Table:

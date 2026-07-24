@@ -1,16 +1,25 @@
-from typing import Dict, Any
+"""Report generation module."""
+from typing import Any
+from netzilla.interfaces import AnalysisResult, Reporter
 
-class ReportGenerator:
-    def __init__(self, format: str = "json"):
-        self.format = format
 
-    def generate(self, analysis_results: dict[str, Any]) -> str:
+class ReportGenerator(Reporter):
+    """Generates reports in various formats."""
+
+    def __init__(self, fmt: str = "json"):
+        self.fmt = fmt
+
+    def generate(self, result: AnalysisResult) -> str:
         """Generates a report based on the analysis results."""
-        if self.format == "json":
-            return self._generate_json(analysis_results)
-        else:
-            raise ValueError(f"Unsupported report format: {self.format}")
+        if self.fmt == "json":
+            return self.to_json(result)
+        # Support dict format as string if json is not requested
+        return str(self.to_dict(result))
 
-    def _generate_json(self, results: dict[str, Any]) -> str:
-        import json
-        return json.dumps(results, indent=4)
+    def to_json(self, result: AnalysisResult) -> str:
+        """Export as JSON."""
+        return result.model_dump_json(indent=4)
+
+    def to_dict(self, result: AnalysisResult) -> dict[str, Any]:
+        """Export as dictionary."""
+        return result.model_dump()

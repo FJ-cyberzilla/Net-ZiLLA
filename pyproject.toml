@@ -1,22 +1,28 @@
 [project]
 name = "net-zilla"
 version = "0.1.0"
-description = "Add your description here"
+description = "NetZilla - Security analysis tool"
 requires-python = ">=3.14"
 dependencies = [
     "dnspython>=2.8.0",
-    "fastapi>=0.139.2",
+    "fastapi>=0.140.0",
+    "httpx>=0.28.1",
     "pydantic>=2.13.4",
+    "python-whois>=0.9.6",
     "pyyaml>=6.0.3",
     "requests>=2.34.2",
+    "rich>=15.0.0",
     "structlog>=26.1.0",
     "tldextract>=5.3.1",
+    "typer>=0.27.0",
     "uvicorn>=0.51.0",
 ]
 
 [dependency-groups]
 dev = [
+    "pylint>=4.0.6",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
     "pytest-mock>=3.15.1",
 ]
