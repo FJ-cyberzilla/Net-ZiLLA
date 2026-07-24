@@ -1,0 +1,17 @@
+​1. Live Threat Feed & OSINT Integrations (netzilla/core/data_enricher.py)
+​Connect your core enricher to free, high-value public threat intelligence APIs so your scans fetch live real-world data:
+​AbuseIPDB / URLhaus: Instantly check if a target IP or domain is flagged in active malware distribution lists.
+​PhishTank API: Cross-reference scanned URLs against verified live phishing submissions.
+​Certificate Transparency Logs (crt.sh): Query SSL/TLS issuance history during domain reconnaissance to catch newly spun-up rogue subdomains or phishing certificates.
+​2. Local SQLite Caching & History Vault (netzilla/utils/cache.py)
+​Since you are using this personally, add a local database (SQLite) to track your scanning history:
+​Scan Persistence: Automatically save every URL, domain scan, and risk verdict to a local netzilla.db file.
+​Performance Caching: Cache WHOIS lookups and DNS query results for 24 hours to prevent repeated external rate limits and speed up subsequent scans.
+​CLI History Command: Add a command to your MS-DOS interface (netzilla history) to search and review past verdicts.
+​3. Smart Heuristic & Fuzzy Matching (netzilla/core/domain_analyzer.py)
+​Enhance your brand impersonation detector with advanced string distance algorithms:
+​Levenshtein Distance / Jaro-Winkler: Programmatically calculate how closely a target domain mimics high-value brands (e.g., detecting g00gle.com or paypa1.com automatically).
+​Homograph Attack Detection: Check for internationalized domain name (IDN) homograph spoofing (using Cyrillic or Greek characters that look like Latin letters).
+​4. Automated Markdown / HTML Report Generation (netzilla/reports/generator.py)
+​Leverage your reports/ module to produce polished forensic artifacts:
+​When a high-risk or suspicious scan finishes, give your CLI the option to automatically export a timestamped, styled Markdown or HTML report into a local reports/ folder so you can keep a paper trail of malicious infrastructure

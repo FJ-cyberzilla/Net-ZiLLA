@@ -1,0 +1,37 @@
+To integrate everything we've discussed and put your Cloudflare API access to work, here is your actionable step-by-step game plan to upgrade Net-ZiLLA right now:
+​Step 1: Secure Your Outbound Traffic (The Shield)
+​Before writing any new code, ensure your local development or scanning environment is fully protected:
+​Route through Cloudflare WARP / Gateway: Turn on Cloudflare WARP or configure a secure proxy tunnel so that every external HTTP request, redirect unroll, and API query Net-ZiLLA makes is masked by Cloudflare's edge network. This prevents threat actors from capturing your real IP or geolocation.
+​Step 2: Implement Cloudflare API Enrichment
+​Take advantage of your Cloudflare API token by building a dedicated lookup module inside Net-ZiLLA (netzilla/core/cf_enricher.py
+
+
+What to query:
+​Domain Intel API: To instantly check domain reputation, categorization, and historical risk scores.
+​URL Scanner API: To submit high-risk shortener destinations - for a safe, cloud-executed headless scan.
+import os
+import requests
+
+def scan_url_with_cloudflare(target_url: str):
+    api_token = os.getenv("CLOUDFLARE_API_TOKEN")
+    account_id = os.getenv("CLOUDFLARE_ACCOUNT_ID")
+
+    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/urlscanner/v2/scan"
+    headers = {
+        "Authorization": f"Bearer {api_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {"url": target_url}
+
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    return {"error": response.status_code, "msg": response.text}
+
+
+Step 3: Build the Safe Link Unroller Module
+​Create a robust helper inside netzilla/core/url_shortener.py that handles SMS/smishing links safely:
+​Headless Redirect Tracking: Use Python's requests with strict limits (allow_redirects=True, timeout limits) to follow HTTP Location headers without executing active web browser scripts.
+​Cloudflare Hand-off: If a shortener points to an obscure or high-risk domain, pass that final destination URL straight into your Cloudflare Scanner API function rather than opening it locally.
+​Step 4: Add a Local Canary Trap (Optional Defense)
+​If you want to test or catch automated scrapers or curious actors probing your infrastructure, implement a lightweight FastAPI canary route (netzilla/api/server.py) that logs incoming User-Agents and edge IPs to your local SQLite database while ret
