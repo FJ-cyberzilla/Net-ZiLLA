@@ -1,5 +1,7 @@
 # 🦖 Net-ZiLLA
-> THREAT INTEL & DETECTION PLATFORM
+
+[![pages-build-deployment](https://github.com/FJ-cyberzilla/Net-ZiLLA/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/FJ-cyberzilla/Net-ZiLLA/actions/workflows/pages/pages-build-deployment)
+
 ---
 
 ## Introduction
