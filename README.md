@@ -1,7 +1,7 @@
 # 🦖 Net-ZiLLA
 
 [![pages-build-deployment](https://github.com/FJ-cyberzilla/Net-ZiLLA/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/FJ-cyberzilla/Net-ZiLLA/actions/workflows/pages/pages-build-deployment)
-
+[![Dependency Graph](https://github.com/FJ-cyberzilla/Net-ZiLLA/actions/workflows/dependabot/update-graph/badge.svg)](https://github.com/FJ-cyberzilla/Net-ZiLLA/actions/workflows/dependabot/update-graph)
 ---
 
 ## Introduction
