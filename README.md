@@ -1,7 +1,7 @@
 # 🦖 Net-ZiLLA
 
 > Elite THREAT INTEL & DETECTION PLATFORM
-> Modular Cybersecurity & Threat Intelligence Engine
+> Cybersecurity & Threat Intelligence Engine
 > Powered by FJ-cyberzilla
 > Python 3.14+
 > License: MIT
