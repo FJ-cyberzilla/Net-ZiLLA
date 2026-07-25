@@ -1,4 +1,5 @@
 import pytest
+from urllib.parse import urlparse
 from netzilla.detectors.sms_scam import SMSScamDetector
 
 def test_sms_detector_prize_scam():
@@ -37,5 +38,6 @@ def test_sms_detector_extract_urls():
     
     urls = detector.extract_urls(message)
     assert len(urls) == 2
-    assert "https://google.com" in urls
-    assert "http://bit.ly/test" in urls
+    parsed_urls = [urlparse(u) for u in urls]
+    assert any(p.scheme == "https" and p.hostname == "google.com" for p in parsed_urls)
+    assert any(p.scheme == "http" and p.hostname == "bit.ly" and p.path == "/test" for p in parsed_urls)
