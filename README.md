@@ -1,8 +1,8 @@
 # 🦖 Net-ZiLLA
 
-> ADVANCED THREAT INTELLIGENCE & DETECTION PLATFORM
+> Elite THREAT INTEL & DETECTION PLATFORM
 > Modular Cybersecurity & Threat Intelligence Engine
-> Powered by FJâ„¢ Cybertronic SystemsÂ®
+> Powered by FJ-cyberzilla
 > Python 3.14+
 > License: MIT
 
